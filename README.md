@@ -1,2 +1,2 @@
 # FuseNet
-FuseNet segmentation with classification
+FuseNet https://github.com/tum-vision/fusenet implementation in Tensorflow with classification
