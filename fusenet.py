@@ -107,3 +107,34 @@ class FuseNet:
     def fuse_layer(self, input1, input2, name):
         return tf.add(input1, input2, name=name)
 
+    def fully_connected_layer(self, input, output_number, name):
+        with tf.name_scope(name) as scope:
+            input_number = input.get_shape()[-1].value
+            weights = tf.Variable(tf.truncated_normal([input_number, output_number],
+                                                      stddev=0.001),
+                                  name='weights')
+            bias = tf.Variable(tf.truncated_normal([output_number],
+                                                   stddev=0.001),
+                               name='bias')
+
+            z = tf.matmul(input, weights) + bias
+            return tf.nn.relu(z, name=scope)
+
+    ##### Unpooling
+    # https://github.com/tensorflow/tensorflow/issues/2169
+    def unpool_layer(self, input, name):
+        """N-dimensional version of the unpooling operation from
+     https://www.robots.ox.ac.uk/~vgg/rg/papers/Dosovitskiy_Learning_to_Generate_2015_CVPR_paper.pdf
+
+        :param tensor: A Tensor of shape [b, d0, d1, ..., dn, ch]
+        :return: A Tensor of shape [b, 2*d0, 2*d1, ..., 2*dn, ch]
+        """
+        with tf.name_scope(name) as scope:
+            sh = input.get_shape().as_list()
+            dim = len(sh[1:-1])
+            out = (tf.reshape(input, [-1] + sh[-dim:]))
+            for i in range(dim, 0, -1):
+                out = tf.concat(i, [out, tf.zeros_like(out)])
+            out_size = [-1] + [s * 2 for s in sh[1:-1]] + [sh[-1]]
+            out = tf.reshape(out, out_size, name=scope)
+        return out
