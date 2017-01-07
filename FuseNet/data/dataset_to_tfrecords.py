@@ -1,5 +1,5 @@
 # ============================================================== #
-#                         NYU Convert                            #
+#             Dataset to tfrecords (open pipeline)               #
 #                                                                #
 #                                                                #
 # Converts image data to TFRecords format with Example protos    #
@@ -144,7 +144,7 @@ def process_image_files_batch(coder, thread_index, ranges, name, filenames,
 
         # Generate a sharded version of the file name, e.g. 'train-00002-of-00010'
         shard = thread_index * num_shards_per_batch + s
-        output_filename = '%s-%.5d-of-%.5d.tfrecord' % (name, shard, num_shards)
+        output_filename = '%s-%.5d-of-%.5d.tfrecords' % (name, shard, num_shards)
         output_file = os.path.join(FLAGS.output_dir, output_filename)
         writer = tf.python_io.TFRecordWriter(output_file)
 
@@ -306,6 +306,10 @@ def main(_):
             'FLAGS.test_shards')
 
     print('[INFO    ]\tSaving results to %s' % FLAGS.output_dir)
+
+    if not tf.gfile.Exists(FLAGS.output_dir):
+        tf.gfile.MakeDirs(FLAGS.output_dir)
+
     process_dataset('train', FLAGS.train_dir,
                                      FLAGS.train_shards, FLAGS.classes_file)
     process_dataset('test', FLAGS.test_dir,

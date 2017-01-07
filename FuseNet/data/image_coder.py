@@ -1,5 +1,5 @@
 # ============================================================== #
-#                         NYU Convert                            #
+#                          Image Coder                           #
 #                                                                #
 #                                                                #
 # Helper class that provides TensorFlow image coding utilities   #
@@ -44,7 +44,7 @@ class ImageCoder(object):
             boolean indicating if the image is a PNG
         """
 
-        return filename.lower().endswith(('.png'))
+        return filename.lower().endswith(('png'))
 
 
     def is_jpeg(self, filename):
@@ -58,7 +58,7 @@ class ImageCoder(object):
             boolean indicating if the image is a PNG
         """
 
-        return filename.lower().endswith(('.jpg', '.jpeg'))
+        return filename.lower().endswith(('jpg', 'jpeg'))
 
 
     def png_to_jpeg(self, image_data):

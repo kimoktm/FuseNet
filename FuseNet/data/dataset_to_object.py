@@ -1,5 +1,5 @@
 # ============================================================== #
-#                          Input Data                            #
+#              Dataset to Object (feed approach)                 #
 #                                                                #
 #                                                                #
 # Datasets object to read, preprocess (resize & encode) data     #
