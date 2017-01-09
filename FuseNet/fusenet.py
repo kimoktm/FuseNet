@@ -9,9 +9,25 @@ import tensorflow as tf
 
 import utils.layers as layers
 
-# class fusenet:
 
-def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = True, dropout_keep_prob = 0.5):
+def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = True):
+    """
+    Build fusenet network:
+    ----------
+    Args:
+        color_inputs: Tensor, [batch_size, height, width, 3]
+        depth_inputs: Tensor, [batch_size, height, width, 1]
+        num_annots: Integer, number of segmentation (annotation) labels
+        num_classes: Integer, number of classification labels
+        is_training: Boolean, in training mode or not (for dropout & bn)
+
+    Returns:
+        annot_logits: Tensor, predicted annotated image flattened 
+                              [batch_size * height * width,  num_annots]
+        class_logits: Tensor, predicted classes [batch_size , num_classes]
+    """
+
+    dropout_keep_prob = 0.5 if is_training else 1.0
 
     # Encoder Section
     # Block 1
@@ -20,7 +36,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv1_1 = layers.conv_btn(depth_inputs,  [3, 3], 64, 'convd1_1', is_training = is_training)
     depth_conv1_2 = layers.conv_btn(depth_conv1_1, [3, 3], 64, 'convd1_2', is_training = is_training)
     conv1_fuse    = layers.add(color_conv1_2, depth_conv1_2, 'conv1_fuse')
-    color_pool1, color_pool1_arg = layers.argmax_pool(conv1_fuse, [2, 2], 'pool1')
+    color_pool1, color_pool1_arg = layers.maxpool_arg(conv1_fuse, [2, 2], 'pool1')
     depth_pool1   = layers.maxpool(depth_conv1_2, [2, 2], 'poold1')
 
     # Block 2
@@ -29,7 +45,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv2_1 = layers.conv_btn(depth_pool1,   [3, 3], 128, 'convd2_1', is_training = is_training)
     depth_conv2_2 = layers.conv_btn(depth_conv2_1, [3, 3], 128, 'convd2_2', is_training = is_training)
     conv2_fuse    = layers.add(color_conv2_2, depth_conv2_2, 'conv2_fuse')
-    color_pool2, color_pool2_arg = layers.argmax_pool(conv2_fuse, [2, 2], 'pool2')
+    color_pool2, color_pool2_arg = layers.maxpool_arg(conv2_fuse, [2, 2], 'pool2')
     depth_pool2   = layers.maxpool(depth_conv2_2, [2, 2], 'poold2')
 
     # Block 3
@@ -40,7 +56,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv3_2 = layers.conv_btn(depth_conv3_1, [3, 3], 256, 'convd3_2', is_training = is_training)
     depth_conv3_3 = layers.conv_btn(depth_conv3_2, [3, 3], 256, 'convd3_3', is_training = is_training)
     conv3_fuse    = layers.add(color_conv3_3, depth_conv3_3, 'conv3_fuse')
-    color_pool3, color_pool3_arg = layers.argmax_pool(conv3_fuse, [2, 2], 'pool3')
+    color_pool3, color_pool3_arg = layers.maxpool_arg(conv3_fuse, [2, 2], 'pool3')
     color_drop3   = layers.dropout(color_pool3, dropout_keep_prob, 'drop3')
     depth_pool3   = layers.maxpool(depth_conv3_3, [2, 2], 'poold3')
     depth_drop3   = layers.dropout(depth_pool3, dropout_keep_prob, 'dropd3')
@@ -53,7 +69,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv4_2 = layers.conv_btn(depth_conv4_1, [3, 3], 512, 'convd4_2', is_training = is_training)
     depth_conv4_3 = layers.conv_btn(depth_conv4_2, [3, 3], 512, 'convd4_3', is_training = is_training)
     conv4_fuse    = layers.add(color_conv4_3, depth_conv4_3, 'conv4_fuse')
-    color_pool4, color_pool4_arg = layers.argmax_pool(conv4_fuse, [2, 2], 'pool4')
+    color_pool4, color_pool4_arg = layers.maxpool_arg(conv4_fuse, [2, 2], 'pool4')
     color_drop4   = layers.dropout(color_pool4, dropout_keep_prob, 'drop4')
     depth_pool4   = layers.maxpool(depth_conv4_3, [2, 2], 'poold4')
     depth_drop4   = layers.dropout(depth_pool4, dropout_keep_prob, 'dropd4')
@@ -66,7 +82,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv5_2 = layers.conv_btn(depth_conv5_1, [3, 3], 512, 'convd5_2', is_training = is_training)
     depth_conv5_3 = layers.conv_btn(depth_conv5_2, [3, 3], 512, 'convd5_3', is_training = is_training)
     conv5_fuse    = layers.add(color_conv5_3, depth_conv5_3, 'conv5_fuse')
-    color_pool5, color_pool5_arg = layers.argmax_pool(conv5_fuse, [2, 2], 'pool5')
+    color_pool5, color_pool5_arg = layers.maxpool_arg(conv5_fuse, [2, 2], 'pool5')
     color_drop5   = layers.dropout(color_pool5, dropout_keep_prob, 'drop5')
 
     # Decoder Section
@@ -98,27 +114,95 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     decdrop2  = layers.dropout(deconv2_1, dropout_keep_prob, 'decdrop2')
 
     # Block 5
-    unpool1   = layers.unpool_2x2(decdrop2, color_pool1_arg)
-    deconv1_2 = layers.deconv_btn(unpool1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
-    score     = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
-    logits    = tf.reshape(score, (-1, num_annots))
+    unpool1      = layers.unpool_2x2(decdrop2, color_pool1_arg)
+    deconv1_2    = layers.deconv_btn(unpool1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
+    annot_score  = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
+    annot_logits = tf.reshape(annot_score, (-1, num_annots))
 
-    return logits
+    # Classification
+    flattend     = layers.flatten(color_drop5, 'flatten')
+    fconnected6  = layers.fully_connected(flattend,    4096, 'fc6')
+    fconnected7  = layers.fully_connected(fconnected6, 4096, 'fc7')
+    class_logits = layers.fully_connected(fconnected7, num_classes, 'fc8')
+
+    return annot_logits, class_logits
 
 
-def loss(logits, labels):
+def segmentation_loss(logits, labels):
+    """
+    Segmentaion loss:
+    ----------
+    Args:
+        logits: Tensor, predicted    [batch_size * height * width,  num_annots]
+        labels: Tensor, ground truth [batch_size, height, width, 1]
+
+    Returns:
+        segment_loss: Segmentation loss
+    """
+
+    labels = tf.reshape(labels, [-1])
+    labels = tf.to_int64(labels)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                        labels = labels, logits = logits, name = 'segment_cross_entropy_per_example')
+    segment_loss  = tf.reduce_mean(cross_entropy, name = 'segment_cross_entropy')
+
+    return segment_loss
+
+
+def classification_loss(logits, labels):
+    """
+    Classification loss:
+    ----------
+    Args:
+        logits: Tensor, predicted    [batch_size,  num_classes]
+        labels: Tensor, ground truth [batch_size, 1]
+
+    Returns:
+        class_loss: Classification loss
+    """
 
     labels = tf.to_int64(labels)
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                        labels = labels, logits = logits, name = 'cross_entropy_per_example')
-    cross_entropy_mean = tf.reduce_mean(cross_entropy, name = 'cross_entropy')
+                        labels = labels, logits = logits, name = 'class_cross_entropy_per_example')
+    class_loss = tf.reduce_mean(cross_entropy, name = 'class_cross_entropy')
 
-    return cross_entropy_mean
+    return class_loss
 
 
-def training(loss, learning_rate):
-    
-    optimizer   = tf.train.GradientDescentOptimizer(learning_rate)
+def loss(annot_logits, annots, class_logits, classes):
+    """
+    Total loss:
+    ----------
+    Args:
+        annot_logits: Tensor, predicted    [batch_size * height * width,  num_annots]
+        annots: Tensor, ground truth [batch_size, height, width, 1]
+        class_logits: Tensor, predicted    [batch_size,  num_classes]
+        classes: Tensor, ground truth [batch_size, 1]
+
+    Returns:
+        total_loss: Segmentation + Classification losses
+    """
+
+    segment_loss = segmentation_loss(annot_logits, annots)
+    class_loss   = classification_loss(class_logits, classes)
+    total_loss   = segment_loss + class_loss
+
+    return total_loss
+
+
+def train(loss, learning_rate):
+    """
+    Train opetation:
+    ----------
+    Args:
+        loss: loss to use for training
+        learning_rate: Float, learning rate
+
+    Returns:
+        train_op: Training operation
+    """
+
+    optimizer   = tf.train.AdamOptimizer(learning_rate)
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
     train_op    = optimizer.minimize(loss, global_step = global_step)
 

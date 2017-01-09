@@ -2,7 +2,7 @@
 #                            Layers                              #
 #                                                                #
 #                                                                #
-# Higher level operations for quickly building layers             #
+# Higher level operations for quickly building layers            #
 # ============================================================== #
 
 import tensorflow as tf
@@ -13,6 +13,22 @@ from tensorflow.contrib.layers.python.layers import layers as tf_layers
 
 def conv(inputs, kernel_size, num_outputs, name,
         stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
+    """
+    Convolution layer followed by activation fn:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        num_outputs: Integer, number of convolution filters
+        name: String, scope name
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height+-, width+-, num_outputs]
+    """
+
     with tf.variable_scope(name):
         num_filters_in = inputs.get_shape()[-1].value
         kernel_shape   = [kernel_size[0], kernel_size[1], num_filters_in, num_outputs]
@@ -29,9 +45,25 @@ def conv(inputs, kernel_size, num_outputs, name,
         return outputs
 
 
-
 def conv_btn(inputs, kernel_size, num_outputs, name,
         is_training = True, stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
+    """
+    Convolution layer followed by batch normalization then activation fn:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        num_outputs: Integer, number of convolution filters
+        name: String, scope name
+        is_training: Boolean, in training mode or not
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height+-, width+-, num_outputs]
+    """
+
     with tf.variable_scope(name):
         num_filters_in = inputs.get_shape()[-1].value
         kernel_shape   = [kernel_size[0], kernel_size[1], num_filters_in, num_outputs]
@@ -49,9 +81,25 @@ def conv_btn(inputs, kernel_size, num_outputs, name,
         return outputs
 
 
-
 def deconv(inputs, kernel_size, num_filters_in, num_outputs, name,
         stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
+    """
+    Convolution Transpose followed by activation fn:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        num_filters_in: Ingteger, number of channels in input tensor
+        num_outputs: Integer, number of convolution filters
+        name: String, scope name
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height+-, width+-, num_outputs]
+    """
+
     with tf.variable_scope(name):
         kernel_shape = [kernel_size[0], kernel_size[1], num_outputs, num_filters_in]
         stride_shape = [1, stride_size[0], stride_size[1], 1]
@@ -69,9 +117,26 @@ def deconv(inputs, kernel_size, num_filters_in, num_outputs, name,
         return outputs
 
 
-
 def deconv_btn(inputs, kernel_size, num_filters_in, num_outputs, name,
         is_training = True, stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
+    """
+    Convolution Transpose followed by batch normalization then activation fn:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        num_filters_in: Ingteger, number of channels in input tensor
+        num_outputs: Integer, number of convolution filters
+        is_training: Boolean, in training mode or not
+        name: String, scope name
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height+-, width+-, num_outputs]
+    """
+
     with tf.variable_scope(name):
         kernel_shape = [kernel_size[0], kernel_size[1], num_outputs, num_filters_in]
         stride_shape = [1, stride_size[0], stride_size[1], 1]
@@ -90,8 +155,64 @@ def deconv_btn(inputs, kernel_size, num_filters_in, num_outputs, name,
         return outputs
 
 
+def batch_norm(inputs, name, is_training = True, decay = 0.9997, epsilon = 0.001, activation_fn = None):
+    """
+    Batch normalization layer (currently using Tf-Slim):
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        name: String, scope name
+        is_training: Boolean, in training mode or not
+        decay: Float, decay rate
+        epsilon, Float, epsilon value
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height, width, channels]
+    """
+
+    return tf_layers.batch_norm(inputs, name = name, decay = decay,
+                            is_training = is_training,
+                            epsilon = epsilon, activation_fn = activation_fn)
+
+
+def flatten(inputs, name):
+    """
+    Flatten input tensor:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        name: String, scope name
+
+    Returns:
+        outputs: Tensor, [batch_size, height * width * channels]
+    """
+
+    with tf.variable_scope(name):
+        input_shape = inputs.get_shape().as_list()
+
+        dim = 1
+        for d in input_shape[1:]:
+            dim *= d
+        outputs = tf.reshape(inputs, [-1, dim])
+
+        return outputs
+
 
 def fully_connected(inputs, num_outputs, name, activation_fn = tf.nn.relu):
+    """
+    Fully connected layer:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        num_outputs: Integer, number of output neurons
+        name: String, scope name
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, num_outputs]
+    """
+
     with tf.variable_scope(name):
         num_filters_in = inputs.get_shape()[-1].value
 
@@ -106,8 +227,83 @@ def fully_connected(inputs, num_outputs, name, activation_fn = tf.nn.relu):
         return outputs
 
 
+def maxpool(inputs, kernel_size, name, padding = 'SAME'):
+    """
+    Max pooling layer:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        name: String, scope name
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+
+    Returns:
+        outputs: Tensor, [batch_size, height / kernelsize[0], width/kernelsize[1], channels]
+    """
+
+    kernel_shape = [1, kernel_size[0], kernel_size[1], 1]
+    
+    outputs = tf.nn.max_pool(inputs, ksize = kernel_shape,
+            strides = kernel_shape, padding = padding, name = name)
+
+    return outputs
+
+
+def maxpool_arg(inputs, kernel_size, name, padding = 'SAME'):
+    """
+    Max pooling with max indices [ONLY WORK WITH GPU'S]:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        kernel_size: List, filter size [height, width]
+        name: String, scope name
+        stride_size: List, convolution stide [height, width]
+        padding: String, input padding
+
+    Returns:
+        outputs: Tensor, [batch_size, height / kernelsize[0], width/kernelsize[1], channels]
+        argmax: Tensor, The flattened indices of the max values chosen for each output
+    """
+
+    kernel_shape = [1, kernel_size[0], kernel_size[1], 1]
+    
+    outputs, argmax = tf.nn.max_pool_with_argmax(inputs, ksize = kernel_shape,
+                    strides = kernel_shape, padding = padding, name = name)
+
+    return outputs, argmax
+
+
+def dropout(inputs, keep_prob, name):
+    """
+    Dropout layer:
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        keep_prob: Float, probability of keeping this layer
+        name: String, scope name
+
+    Returns:
+        outputs: Tensor, [batch_size, height, width, channels]
+    """
+
+    return tf.nn.dropout(inputs, keep_prob = keep_prob, name = name)
+
 
 def add(inputs1, inputs2, name, activation_fn = None):
+    """
+    Add two tensors:
+    ----------
+    Args:
+        inputs1: Tensor, [batch_size, height, width, channels]
+        inputs2: Tensor, [batch_size, height, width, channels]
+        name: String, scope name
+        activation_fn: Tensor fn, activation function on output (can be None)
+
+    Returns:
+        outputs: Tensor, [batch_size, height, width, channels]
+    """
+
     with tf.variable_scope(name):
         outputs = tf.add(inputs1, inputs2)
 
@@ -117,51 +313,40 @@ def add(inputs1, inputs2, name, activation_fn = None):
         return outputs
 
 
+def unravel_argmax(argmax, output_shape):
+    """
+    Unravel flattened indices of max values (argmaxpool):
+    https://github.com/tensorflow/tensorflow/issues/2169#issuecomment-253110753
+    ----------
+    Args:
+        argmax: Tensor, [batch_size, height, width, channels]
+        output_shape: desired output shape
 
-def maxpool(inputs, kernel_size, name, padding = 'SAME'):
-    kernel_shape = [1, kernel_size[0], kernel_size[1], 1]
-    
-    outputs = tf.nn.max_pool(inputs, ksize = kernel_shape,
-            strides = kernel_shape, padding = padding, name = name)
+    Returns:
+        outputs: Tensor, with output_shape
+    """
+
+    output_list = []
+    output_list.append(argmax // (output_shape[2] * output_shape[3]))
+    output_list.append(argmax % (output_shape[2] * output_shape[3]) // output_shape[3])
+    outputs = tf.pack(output_list)
 
     return outputs
 
 
-
-def argmax_pool(inputs, kernel_size, name, padding = 'SAME'):
-   # GPU only
-    kernel_shape = [1, kernel_size[0], kernel_size[1], 1]
-    
-    outputs, argmax = tf.nn.max_pool_with_argmax(inputs, ksize = kernel_shape,
-                    strides = kernel_shape, padding = padding, name = name)
-
-    return outputs, argmax
-
-
-
-def dropout(inputs, keep_prob, name):
-    return tf.nn.dropout(inputs, keep_prob = keep_prob, name = name)
-
-
-
-def batch_norm(inputs, is_training, name, decay = 0.9997, epsilon = 0.001, activation_fn = None):
-    return tf_layers.batch_norm(inputs, name = name, decay = decay,
-                            is_training = is_training,
-                            epsilon = epsilon, activation_fn = activation_fn)
-
-
-
-# https://github.com/tensorflow/tensorflow/issues/2169#issuecomment-253110753
-def _unravel_argmax(argmax, shape):
-    output_list = []
-    output_list.append(argmax // (shape[2] * shape[3]))
-    output_list.append(argmax % (shape[2] * shape[3]) // shape[3])
-
-    return tf.pack(output_list)
-
-
-
 def unpool_2x2(inputs, raveled_argmax):
+    """
+    Unpooling layer for 2x2 argmaxpooling (requires max indices):
+    https://github.com/tensorflow/tensorflow/issues/2169#issuecomment-253110753
+    ----------
+    Args:
+        inputs: Tensor, [batch_size, height, width, channels]
+        argmax: Tensor, The flattened indices of the max values chosen for each output
+
+    Returns:
+        outputs: Tensor, [batch_size, height * 2, width * 2, channels]
+    """ 
+
     inputs_shape = tf.shape(inputs)
     top_shape = [inputs_shape[0], inputs_shape[1]*2, inputs_shape[2]*2, inputs_shape[3]]
 
@@ -171,7 +356,7 @@ def unpool_2x2(inputs, raveled_argmax):
     channels = top_shape[3]
 
     argmax_shape = tf.to_int64([batch_size, height, width, channels])
-    raveled_argmax = _unravel_argmax(raveled_argmax, argmax_shape)
+    raveled_argmax = unravel_argmax(raveled_argmax, argmax_shape)
 
     t1 = tf.to_int64(tf.range(channels))
     t1 = tf.tile(t1, [batch_size * (width//2) * (height//2)])
@@ -195,5 +380,6 @@ def unpool_2x2(inputs, raveled_argmax):
     values = tf.reshape(x1, [-1])
 
     delta = tf.SparseTensor(indices, values, tf.to_int64(top_shape))
+    outputs = tf.sparse_tensor_to_dense(tf.sparse_reorder(delta))
 
-    return tf.sparse_tensor_to_dense(tf.sparse_reorder(delta))
+    return outputs
