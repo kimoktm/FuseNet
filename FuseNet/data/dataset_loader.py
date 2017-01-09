@@ -2,7 +2,7 @@
 #                        Dataset Loader                          #
 #                                                                #
 #                                                                #
-# Image processing occurs on a single image at a time. Image are #
+# Processing occurs on a single image at a time. Images are      #
 # read and preprocessed in parallel across multiple threads. A   #
 # Batch is then formed from these data to be used for training   #
 # or evaluation                                                  #
@@ -16,8 +16,8 @@ import tensorflow as tf
 IMAGE_FORMAT = 'PNG'
 
 
-def inputs(data_files, train=True, batch_size = 10, image_size = 224, 
-                     num_epochs = 50, num_preprocess_threads = 4):
+def inputs(data_files, train = True, batch_size = 10, image_size = 224, 
+                     num_epochs = 10, num_preprocess_threads = 4):
     """
     Generate shuffled batches from dataset images:
     ----------
@@ -157,14 +157,15 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
         depth_image = image_preprocessing(depth_image, image_size, is_color = False)
         annot_image = image_preprocessing(annot_image, image_size, is_color = False)
 
-        # color_image = tf.cast(color_image, tf.float32)
-        # depth_image = tf.cast(depth_image, tf.float32)
-        # annot_image = tf.cast(annot_image, tf.int64)
-
-        color_image = tf.cast(color_image, tf.uint8)
-        depth_image = tf.cast(depth_image, tf.uint8)
-        annot_image = tf.cast(annot_image, tf.uint8)
+        color_image = tf.cast(color_image, tf.float32)
+        depth_image = tf.cast(depth_image, tf.float32)
+        annot_image = tf.cast(annot_image, tf.float32)
         clss = tf.cast(clss, tf.int64)
+
+        # color_image = tf.cast(color_image, tf.uint8)
+        # depth_image = tf.cast(depth_image, tf.uint8)
+        # annot_image = tf.cast(annot_image, tf.uint8)
+        # clss = tf.cast(clss, tf.int64)
 
         # Ensures a minimum amount of shuffling of examples.
         min_after_dequeue = 1000
@@ -175,5 +176,7 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
                 batch_size = batch_size, num_threads = num_preprocess_threads,
                 capacity = capacity,
                 min_after_dequeue = min_after_dequeue)
+
+        classes = tf.reshape(classes, [batch_size])
 
         return images, depths, annots, classes

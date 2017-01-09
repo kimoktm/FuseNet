@@ -1,140 +1,125 @@
+# ============================================================== #
+#                           FuseNet                              #
+#                                                                #
+#                                                                #
+# FuseNet tensorflow implementation WIP                          #
+# ============================================================== #
+
 import tensorflow as tf
 
-class FuseNet:
+import utils.layers as layers
 
-    def run(self, input, dropout_keep_prob):
-        # Layer1
-        rgb_convolution1_1 = self.convolution_layer(input, output_channels=64, height=3, width=3, name='rgb_conv1_1')
-        rgb_convolution1_2 = self.convolution_layer(rgb_convolution1_1, output_channels=64, height=3, width=3, name='rgb_conv1_2')
+# class fusenet:
 
-        d_convolution1_1 = self.convolution_layer(input, output_channels=64, height=3, width=3, name='d_conv1_1')
-        d_convolution1_2 = self.convolution_layer(d_convolution1_1, output_channels=64, height=3, width=3, name='d_conv1_2')
+def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = True, dropout_keep_prob = 0.5):
 
-        fuse1 = self.fuse_layer(rgb_convolution1_2, d_convolution1_2, name='fuse1')
+    # Encoder Section
+    # Block 1
+    color_conv1_1 = layers.conv_btn(color_inputs,  [3, 3], 64, 'conv1_1', is_training = is_training)
+    color_conv1_2 = layers.conv_btn(color_conv1_1, [3, 3], 64, 'conv1_2', is_training = is_training)
+    depth_conv1_1 = layers.conv_btn(depth_inputs,  [3, 3], 64, 'convd1_1', is_training = is_training)
+    depth_conv1_2 = layers.conv_btn(depth_conv1_1, [3, 3], 64, 'convd1_2', is_training = is_training)
+    conv1_fuse    = layers.add(color_conv1_2, depth_conv1_2, 'conv1_fuse')
+    color_pool1, color_pool1_arg = layers.argmax_pool(conv1_fuse, [2, 2], 'pool1')
+    depth_pool1   = layers.maxpool(depth_conv1_2, [2, 2], 'poold1')
 
-        rgb_pool1 = self.maxpool_layer(fuse1, height=2, width=2, name='rbg_pool1')
-        d_pool1 = self.maxpool_layer(d_convolution1_2, height=2, width=2, name='d_pool1')
+    # Block 2
+    color_conv2_1 = layers.conv_btn(color_pool1,   [3, 3], 128, 'conv2_1', is_training = is_training)
+    color_conv2_2 = layers.conv_btn(color_conv2_1, [3, 3], 128, 'conv2_2', is_training = is_training)
+    depth_conv2_1 = layers.conv_btn(depth_pool1,   [3, 3], 128, 'convd2_1', is_training = is_training)
+    depth_conv2_2 = layers.conv_btn(depth_conv2_1, [3, 3], 128, 'convd2_2', is_training = is_training)
+    conv2_fuse    = layers.add(color_conv2_2, depth_conv2_2, 'conv2_fuse')
+    color_pool2, color_pool2_arg = layers.argmax_pool(conv2_fuse, [2, 2], 'pool2')
+    depth_pool2   = layers.maxpool(depth_conv2_2, [2, 2], 'poold2')
 
-        # Layer2
-        rgb_convolution2_1 = self.convolution_layer(rgb_pool1, output_channels=128, height=3, width=3, name='rgb_conv2_1')
-        rgb_convolution2_2 = self.convolution_layer(rgb_convolution2_1, output_channels=128, height=3, width=3, name='rgb_conv2_2')
+    # Block 3
+    color_conv3_1 = layers.conv_btn(color_pool2,   [3, 3], 256, 'conv3_1', is_training = is_training)
+    color_conv3_2 = layers.conv_btn(color_conv3_1, [3, 3], 256, 'conv3_2', is_training = is_training)
+    color_conv3_3 = layers.conv_btn(color_conv3_2, [3, 3], 256, 'conv3_3', is_training = is_training)
+    depth_conv3_1 = layers.conv_btn(depth_pool2,   [3, 3], 256, 'convd3_1', is_training = is_training)
+    depth_conv3_2 = layers.conv_btn(depth_conv3_1, [3, 3], 256, 'convd3_2', is_training = is_training)
+    depth_conv3_3 = layers.conv_btn(depth_conv3_2, [3, 3], 256, 'convd3_3', is_training = is_training)
+    conv3_fuse    = layers.add(color_conv3_3, depth_conv3_3, 'conv3_fuse')
+    color_pool3, color_pool3_arg = layers.argmax_pool(conv3_fuse, [2, 2], 'pool3')
+    color_drop3   = layers.dropout(color_pool3, dropout_keep_prob, 'drop3')
+    depth_pool3   = layers.maxpool(depth_conv3_3, [2, 2], 'poold3')
+    depth_drop3   = layers.dropout(depth_pool3, dropout_keep_prob, 'dropd3')
 
-        d_convolution2_1 = self.convolution_layer(d_pool1, output_channels=128, height=3, width=3, name='d_conv2_1')
-        d_convolution2_2 = self.convolution_layer(d_convolution2_1, output_channels=128, height=3, width=3, name='d_conv2_2')
+    # Block 4
+    color_conv4_1 = layers.conv_btn(color_drop3,   [3, 3], 512, 'conv4_1', is_training = is_training)
+    color_conv4_2 = layers.conv_btn(color_conv4_1, [3, 3], 512, 'conv4_2', is_training = is_training)
+    color_conv4_3 = layers.conv_btn(color_conv4_2, [3, 3], 512, 'conv4_3', is_training = is_training)
+    depth_conv4_1 = layers.conv_btn(depth_drop3,   [3, 3], 512, 'convd4_1', is_training = is_training)
+    depth_conv4_2 = layers.conv_btn(depth_conv4_1, [3, 3], 512, 'convd4_2', is_training = is_training)
+    depth_conv4_3 = layers.conv_btn(depth_conv4_2, [3, 3], 512, 'convd4_3', is_training = is_training)
+    conv4_fuse    = layers.add(color_conv4_3, depth_conv4_3, 'conv4_fuse')
+    color_pool4, color_pool4_arg = layers.argmax_pool(conv4_fuse, [2, 2], 'pool4')
+    color_drop4   = layers.dropout(color_pool4, dropout_keep_prob, 'drop4')
+    depth_pool4   = layers.maxpool(depth_conv4_3, [2, 2], 'poold4')
+    depth_drop4   = layers.dropout(depth_pool4, dropout_keep_prob, 'dropd4')
 
-        fuse2 = self.fuse_layer(rgb_convolution2_2, d_convolution2_2, name='fuse2')
+    # Block 5
+    color_conv5_1 = layers.conv_btn(color_drop4,   [3, 3], 512, 'conv5_1', is_training = is_training)
+    color_conv5_2 = layers.conv_btn(color_conv5_1, [3, 3], 512, 'conv5_2', is_training = is_training)
+    color_conv5_3 = layers.conv_btn(color_conv5_2, [3, 3], 512, 'conv5_3', is_training = is_training)
+    depth_conv5_1 = layers.conv_btn(depth_drop4,   [3, 3], 512, 'convd5_1', is_training = is_training)
+    depth_conv5_2 = layers.conv_btn(depth_conv5_1, [3, 3], 512, 'convd5_2', is_training = is_training)
+    depth_conv5_3 = layers.conv_btn(depth_conv5_2, [3, 3], 512, 'convd5_3', is_training = is_training)
+    conv5_fuse    = layers.add(color_conv5_3, depth_conv5_3, 'conv5_fuse')
+    color_pool5, color_pool5_arg = layers.argmax_pool(conv5_fuse, [2, 2], 'pool5')
+    color_drop5   = layers.dropout(color_pool5, dropout_keep_prob, 'drop5')
 
-        rgb_pool2 = self.maxpool_layer(fuse2, height=2, width=2, name='rbg_pool2')
-        d_pool2 = self.maxpool_layer(d_convolution2_2, height=2, width=2, name='d_pool2')
+    # Decoder Section
+    # Block 1
+    unpool5   = layers.unpool_2x2(color_drop5, color_pool5_arg)
+    deconv5_3 = layers.deconv_btn(unpool5,   [3, 3], 512, 512, 'deconv5_3', is_training = is_training)
+    deconv5_2 = layers.deconv_btn(deconv5_3, [3, 3], 512, 512, 'deconv5_2', is_training = is_training)
+    deconv5_1 = layers.deconv_btn(deconv5_2, [3, 3], 512, 512, 'deconv5_1', is_training = is_training)
+    decdrop5  = layers.dropout(deconv5_1, dropout_keep_prob, 'decdrop5')
 
-        # Layer3
-        rgb_convolution3_1 = self.convolution_layer(rgb_pool2, output_channels=256, height=3, width=3, name='rgb_conv3_1')
-        rgb_convolution3_2 = self.convolution_layer(rgb_convolution3_1, output_channels=256, height=3, width=3, name='rgb_conv3_2')
-        rgb_convolution3_3 = self.convolution_layer(rgb_convolution3_2, output_channels=256, height=3, width=3, name='rgb_conv3_3')
+    # Block 2
+    unpool4   = layers.unpool_2x2(decdrop5, color_pool4_arg)
+    deconv4_3 = layers.deconv_btn(unpool4,   [3, 3], 512, 512, 'deconv4_3', is_training = is_training)
+    deconv4_2 = layers.deconv_btn(deconv4_3, [3, 3], 512, 512, 'deconv4_2', is_training = is_training)
+    deconv4_1 = layers.deconv_btn(deconv4_2, [3, 3], 512, 256, 'deconv4_1', is_training = is_training)
+    decdrop4  = layers.dropout(deconv4_1, dropout_keep_prob, 'decdrop4')
 
-        d_convolution3_1 = self.convolution_layer(d_pool2, output_channels=256, height=3, width=3, name='d_conv3_1')
-        d_convolution3_2 = self.convolution_layer(d_convolution3_1, output_channels=256, height=3, width=3, name='d_conv3_2')
-        d_convolution3_3 = self.convolution_layer(d_convolution3_2, output_channels=256, height=3, width=3, name='d_conv3_3')
+    # Block 3
+    unpool3   = layers.unpool_2x2(decdrop4, color_pool3_arg)
+    deconv3_3 = layers.deconv_btn(unpool3,   [3, 3], 256, 256, 'deconv3_3', is_training = is_training)
+    deconv3_2 = layers.deconv_btn(deconv3_3, [3, 3], 256, 256, 'deconv3_2', is_training = is_training)
+    deconv3_1 = layers.deconv_btn(deconv3_2, [3, 3], 256, 128, 'deconv3_1', is_training = is_training)
+    decdrop3  = layers.dropout(deconv3_1, dropout_keep_prob, 'decdrop3')
 
-        fuse3 = self.fuse_layer(rgb_convolution3_3, d_convolution3_3, name='fuse3')
+    # Block 4
+    unpool2   = layers.unpool_2x2(decdrop3, color_pool2_arg)
+    deconv2_2 = layers.deconv_btn(unpool2,   [3, 3], 128, 128, 'deconv2_2', is_training = is_training)
+    deconv2_1 = layers.deconv_btn(deconv2_2, [3, 3], 128,  64, 'deconv2_1', is_training = is_training)
+    decdrop2  = layers.dropout(deconv2_1, dropout_keep_prob, 'decdrop2')
 
-        rgb_pool3 = self.maxpool_layer(fuse3, height=2, width=2, name='rbg_pool3')
-        d_pool3 = self.maxpool_layer(d_convolution3_3, height=2, width=2, name='d_pool3')
+    # Block 5
+    unpool1   = layers.unpool_2x2(decdrop2, color_pool1_arg)
+    deconv1_2 = layers.deconv_btn(unpool1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
+    score     = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
+    logits    = tf.reshape(score, (-1, num_annots))
 
-        rgb_pool3_dropout = tf.nn.dropout(rgb_pool3, keep_prob=dropout_keep_prob, name='rgb_pool3_dropout')
-        d_pool3_dropout = tf.nn.dropout(d_pool3, keep_prob=dropout_keep_prob, name='d_pool3_dropout')
-
-        # Layer4
-        rgb_convolution4_1 = self.convolution_layer(rgb_pool3_dropout, output_channels=512, height=3, width=3, name='rgb_conv4_1')
-        rgb_convolution4_2 = self.convolution_layer(rgb_convolution4_1, output_channels=512, height=3, width=3, name='rgb_conv4_2')
-        rgb_convolution4_3 = self.convolution_layer(rgb_convolution4_2, output_channels=512, height=3, width=3, name='rgb_conv4_3')
-
-        d_convolution4_1 = self.convolution_layer(d_pool3_dropout, output_channels=512, height=3, width=3, name='d_conv4_1')
-        d_convolution4_2 = self.convolution_layer(d_convolution4_1, output_channels=512, height=3, width=3, name='d_conv4_2')
-        d_convolution4_3 = self.convolution_layer(d_convolution4_2, output_channels=512, height=3, width=3, name='d_conv4_3')
-
-        fuse4 = self.fuse_layer(rgb_convolution4_3, d_convolution4_3, name='fuse4')
-
-        rgb_pool4 = self.maxpool_layer(fuse4, height=2, width=2, name='rbg_pool4')
-        d_pool4 = self.maxpool_layer(d_convolution4_3, height=2, width=2, name='d_pool4')
-
-        rgb_pool4_dropout = tf.nn.dropout(rgb_pool4, keep_prob=dropout_keep_prob, name='rgb_pool4_dropout')
-        d_pool4_dropout = tf.nn.dropout(d_pool4, keep_prob=dropout_keep_prob, name='d_pool4_dropout')
-
-        # Layer5
-        rgb_convolution5_1 = self.convolution_layer(rgb_pool4_dropout, output_channels=512, height=3, width=3, name='rgb_conv5_1')
-        rgb_convolution5_2 = self.convolution_layer(rgb_convolution5_1, output_channels=512, height=3, width=3, name='rgb_conv5_2')
-        rgb_convolution5_3 = self.convolution_layer(rgb_convolution5_2, output_channels=512, height=3, width=3, name='rgb_conv5_3')
-
-        d_convolution5_1 = self.convolution_layer(d_pool4_dropout, output_channels=512, height=3, width=3, name='d_conv5_1')
-        d_convolution5_2 = self.convolution_layer(d_convolution5_1, output_channels=512, height=3, width=3, name='d_conv5_2')
-        d_convolution5_3 = self.convolution_layer(d_convolution5_2, output_channels=512, height=3, width=3, name='d_conv5_3')
-
-        fuse5 = self.fuse_layer(rgb_convolution5_3, d_convolution5_3, name='fuse5')
-
-        rgb_pool5 = self.maxpool_layer(fuse5, height=2, width=2, name='rbg_pool5')
-        d_pool5 = self.maxpool_layer(d_convolution5_3, height=2, width=2, name='d_pool5')
-
-        rgb_pool5_dropout = tf.nn.dropout(rgb_pool5, keep_prob=dropout_keep_prob, name='rgb_pool5_dropout')
-        d_pool5_dropout = tf.nn.dropout(d_pool5, keep_prob=dropout_keep_prob, name='d_pool5_dropout')
-
-        return rgb_pool5_dropout
+    return logits
 
 
-    def maxpool_layer(self, input, height, width, name):
-        return tf.nn.max_pool(input,
-                              ksize=[1, height, width, 1],
-                              strides=[1, height, width, 1],
-                              padding='SAME',
-                              name=name)
+def loss(logits, labels):
 
-    def convolution_layer(self, input, output_channels, height, width, name):
-        with tf.name_scope(name) as scope:
-            input_channels = input.get_shape()[-1].value
-            filter = tf.Variable(tf.truncated_normal([height, width, input_channels, output_channels],
-                                                     stddev=0.001),
-                                 name='weights')
-            biases = tf.Variable(tf.truncated_normal([output_channels],
-                                                     stddev=0.001),
-                                 trainable=True,
-                                 name='biases')
+    labels = tf.to_int64(labels)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                        labels = labels, logits = logits, name = 'cross_entropy_per_example')
+    cross_entropy_mean = tf.reduce_mean(cross_entropy, name = 'cross_entropy')
 
-            convolution = tf.nn.conv2d(input, filter, strides=[1, 1, 1, 1], padding='SAME')
-            z = tf.nn.bias_add(convolution, biases)
-            #TODO: Batch normalization
-            return tf.nn.relu(z, name=scope)
+    return cross_entropy_mean
 
-    def fuse_layer(self, input1, input2, name):
-        return tf.add(input1, input2, name=name)
 
-    def fully_connected_layer(self, input, output_number, name):
-        with tf.name_scope(name) as scope:
-            input_number = input.get_shape()[-1].value
-            weights = tf.Variable(tf.truncated_normal([input_number, output_number],
-                                                      stddev=0.001),
-                                  name='weights')
-            bias = tf.Variable(tf.truncated_normal([output_number],
-                                                   stddev=0.001),
-                               name='bias')
+def training(loss, learning_rate):
+    
+    optimizer   = tf.train.GradientDescentOptimizer(learning_rate)
+    global_step = tf.Variable(0, name = 'global_step', trainable = False)
+    train_op    = optimizer.minimize(loss, global_step = global_step)
 
-            z = tf.matmul(input, weights) + bias
-            return tf.nn.relu(z, name=scope)
-
-    ##### Unpooling
-    # https://github.com/tensorflow/tensorflow/issues/2169
-    def unpool_layer(self, input, name):
-        """N-dimensional version of the unpooling operation from
-     https://www.robots.ox.ac.uk/~vgg/rg/papers/Dosovitskiy_Learning_to_Generate_2015_CVPR_paper.pdf
-
-        :param tensor: A Tensor of shape [b, d0, d1, ..., dn, ch]
-        :return: A Tensor of shape [b, 2*d0, 2*d1, ..., 2*dn, ch]
-        """
-        with tf.name_scope(name) as scope:
-            sh = input.get_shape().as_list()
-            dim = len(sh[1:-1])
-            out = (tf.reshape(input, [-1] + sh[-dim:]))
-            for i in range(dim, 0, -1):
-                out = tf.concat(i, [out, tf.zeros_like(out)])
-            out_size = [-1] + [s * 2 for s in sh[1:-1]] + [sh[-1]]
-            out = tf.reshape(out, out_size, name=scope)
-        return out
+    return train_op
