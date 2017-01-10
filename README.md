@@ -42,6 +42,8 @@ maxpool with args which only works on GPU.
 
 
 ### To-Do
+- [ ] Group scene classes (27) to have a good distribition since some classes only have 4 images
+- [ ] Adjust nyu_extractor to use scene class mapping as well (after grouping)
 - [ ] Adjust nyu_extractor to integrate validation split as well
 - [ ] Add Weight decay to training
 - [ ] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
