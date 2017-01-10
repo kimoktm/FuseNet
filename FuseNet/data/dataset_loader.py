@@ -16,8 +16,8 @@ import tensorflow as tf
 IMAGE_FORMAT = 'PNG'
 
 
-def inputs(data_files, train = True, batch_size = 10, image_size = 224, 
-                     num_epochs = 10, num_preprocess_threads = 4):
+def inputs(data_files, train, batch_size, image_size, 
+                     num_epochs, num_preprocess_threads = 4):
     """
     Generate shuffled batches from dataset images:
     ----------
