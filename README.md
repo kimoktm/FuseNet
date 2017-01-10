@@ -38,8 +38,10 @@ maxpool with args which only works on GPU.
 
 ### Training
 - To train Fusenet run `fusenet_train` passing tfrecords dir
-  `python fusenet_train.py`
-
+   
+   ```
+    python fusenet_train.py and pass in the paramters
+    ```
 
 ### To-Do
 - [ ] Group scene classes (27) to have a good distribition since some classes only have 4 images
