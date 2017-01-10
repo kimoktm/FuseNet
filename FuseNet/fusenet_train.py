@@ -29,7 +29,6 @@ def maybe_download_and_extract():
     (processed dataset into tfrecords with 41 labels & 27 classes)
     """
 
-    print('[WARN    ]\tData not yet uploaded. You have to do the processing')
     filenames = ['tfrecords_41_27.tar.gz']
     url = '_'
 
@@ -43,6 +42,8 @@ def maybe_download_and_extract():
 
     if not tfrecords:
         print('[INFO    ]\tNo tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
+        print('[WARN    ]\tData not yet uploaded. You have to do the processing')
+
         for filename in filenames:
             wget.download(url + filename, out = os.path.join(FLAGS.tfrecords_dir, filename))
 

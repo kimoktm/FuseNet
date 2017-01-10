@@ -10,6 +10,8 @@ import tensorflow as tf
 from tensorflow.contrib.layers import xavier_initializer
 from tensorflow.contrib.layers.python.layers import layers as tf_layers
 
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import gen_nn_ops
 
 def conv(inputs, kernel_size, num_outputs, name,
         stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
@@ -248,6 +250,22 @@ def maxpool(inputs, kernel_size, name, padding = 'SAME'):
             strides = kernel_shape, padding = padding, name = name)
 
     return outputs
+
+
+@ops.RegisterGradient("MaxPoolWithArgmax")
+def _MaxPoolGradWithArgmax(op, grad, unused_argmax_grad):
+    """
+    Max pooling override default to include gradient
+    Max pool with args missing gradient workaround:
+    https://github.com/tensorflow/tensorflow/issues/1793
+    """
+
+    return gen_nn_ops._max_pool_grad_with_argmax(op.inputs[0],
+                                                grad,
+                                                op.outputs[1],
+                                                op.get_attr("ksize"),
+                                                op.get_attr("strides"),
+                                                padding=op.get_attr("padding"))
 
 
 def maxpool_arg(inputs, kernel_size, name, padding = 'SAME'):

@@ -120,7 +120,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     annot_logits = tf.reshape(annot_score, (-1, num_annots))
 
     # Classification
-    flattend     = layers.flatten(color_drop5, 'flatten')
+    flattend     = layers.flatten(conv5_fuse, 'flatten')
     fconnected6  = layers.fully_connected(flattend,    4096, 'fc6')
     fconnected7  = layers.fully_connected(fconnected6, 4096, 'fc7')
     class_logits = layers.fully_connected(fconnected7, num_classes, 'fc8')

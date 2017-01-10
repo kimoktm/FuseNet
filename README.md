@@ -1,9 +1,12 @@
 # FuseNet
-Code for reproducing main results in the paper [FuseNet: FuseNet: incorporating depth into semantic segmentation via fusion-based CNN architecture](https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf) by C. Hazirbas and L. Ma and C. Domokos and D. Cremers.
+Code for reproducing main results in the paper [FuseNet: FuseNet: incorporating depth into semantic segmentation via fusion-based CNN architecture](https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf) in addition to segmentation a classification loss for scene (kitchen, office,..) is also added to test its effect on the overall segmentation quality.
+
 
 <img src="Images/framework.png" width="800px" height="386px"/>
 
 ### Dependencies
+Due to the fact that tensorflow doesn't have unpooling layer a work around is done using
+maxpool with args which only works on GPU.
 - python 2.7
 - [TensorFlow 0.12 GPU version](https://www.tensorflow.org/get_started/os_setup)
 - In addition, please `pip install -r requirements.txt` to install the following packages:
