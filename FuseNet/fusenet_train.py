@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--tfrecords_dir', help = 'Tfrecords directory', default = '../Datasets/NYU/tfrecords')
     parser.add_argument('--checkpoint_dir', help = 'Checkpoints directory', default = '../Datasets/NYU/checkpoints')
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
-    parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 27)
+    parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)

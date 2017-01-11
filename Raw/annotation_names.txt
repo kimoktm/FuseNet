@@ -1,4 +1,3 @@
-none
 wall
 floor
 cabinet
