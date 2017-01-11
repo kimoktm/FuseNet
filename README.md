@@ -15,8 +15,11 @@ Code for reproducing main results in the paper [FuseNet: FuseNet: incorporating 
 **Data**
 1. Download NYUv2 RGB-D dataset [here](http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html). This dataset contains 1449 paired RGB-D images. To map the original labels into 40 classes, we use the mapping by Gupta et al from this [paper](https://people.eecs.berkeley.edu/~sgupta/pdf/GuptaArbelaezMalikCVPR13.pdf). For your convenience, we put the data split and label mapping in the subfolders `Raw/`.
 ```
-nyuv2_40class_mapping.mat      maps to 40 classes, 0 is invalid
-splits.mat                     standard train-test split
+nyuv2_40_annots_mapping.mat      maps to 40 annotations, 0 is invalid
+nyuv2_10_class_mapping.mat       maps to 10 classes (scenes), 0 is invalid
+annotations_names.txt            mapped annotations names (indexed according to mapping)
+class_names.txt                  mapped classes (scenes) names (indexed according to mapping)
+splits.mat                       standard train-test split
 ```
 2. Preprocess raw dataset and save results to `Datasets/NYU` using
   `python data/nyu_dataset_extract.py -i nyu_dataset.mat -s splits.mat -l mapping.mat -o Datasets/NYU`

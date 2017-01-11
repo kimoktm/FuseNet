@@ -95,8 +95,9 @@ def process_image(i, class_id, color, depth, annot):
                 "[ERROR   ]\tindex %d neither found in training set nor in test set" % idx)
         data_type = "testing"
 
-    folder   = "%s/%s/%s" % (output_dir, data_type, classes_names[class_id])
-    filename = "%s/%05d" % (folder, i)
+    mapped_class = class_map[class_id]
+    folder       = "%s/%s/%s" % (output_dir, data_type, classes_names[mapped_class])
+    filename     = "%s/%05d" % (folder, i)
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -117,10 +118,10 @@ def process_image(i, class_id, color, depth, annot):
     annot_image = annot_image.crop(crop_box)
     annot_image.save(filename + "_annot.png")
 
-    rel_path   = "%s/%s/%05d" % (data_type, classes_names[class_id], i)
+    rel_path   = "%s/%s/%05d" % (data_type, classes_names[mapped_class], i)
 
     return [ idx in train_images, [rel_path + "_color.png", 
-            rel_path +"_depth.png", rel_path + "_annot.png", class_id]]
+            rel_path +"_depth.png", rel_path + "_annot.png", mapped_class]]
 
 
 if __name__ == "__main__":
@@ -128,7 +129,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Extract and process NYUDV2 dataset')
     parser.add_argument('-i', '--input_data', help = 'Input dataset (.mat)', required = True)
     parser.add_argument('-s', '--split_map', help = 'Training and testing split (.mat)', required = True)
-    parser.add_argument('-l', '--annots_map', help = 'Annotations mapping (.mat)', required = False)
+    parser.add_argument('-a', '--annots_map', help = 'Annotations mapping (.mat)', required = False)
+    parser.add_argument('-c', '--class_map', help = 'Class (scenes) mapping (.mat)', required = False)
+    parser.add_argument('-cn', '--class_names', help = 'Mapped Class names mapping (.txt)', required = False)
     parser.add_argument('-o', '--output_dir', help = 'Output directory', required = True)
     parser.add_argument('-n', '--threads', help = 'Number of threads', required = False, default = -1)
     args = parser.parse_args()
@@ -149,6 +152,9 @@ if __name__ == "__main__":
     classes = [u''.join(unichr(c) for c in dataset[obj_ref]) for obj_ref in dataset['sceneTypes'][0]]
     annots_names = [u''.join(unichr(c) for c in dataset[obj_ref]) for obj_ref in dataset['names'][0]]
 
+    # Extract classes names and their corresponding ids
+    # so names can be retrived from ids ex: 0->basement
+    classes_names, classes_ids = np.unique(classes, return_inverse = True)
 
     # if annotations mapping is provided use it 
     # other wise stick to the default 894 annotations
@@ -158,25 +164,14 @@ if __name__ == "__main__":
     else:
         annots_map = range(len(annots_names))
 
-    # Extract classes names and their corresponding ids
-    # so names can be retrived from ids ex: 0->basement
-    classes_names, classes_ids = np.unique(classes, return_inverse = True)
-    np.savetxt("%s/class_names.txt" % output_dir, classes_names, "%s")
-
-    # Extract annotations names according to the given mapping
-    # currently names are given by the first element
-    # in the group. 40 class mapping 'Gupta et al' is
-    # handled correctly following naming convetion used:
-    # https://people.eecs.berkeley.edu/~sgupta/pdf/GuptaArbelaezMalikCVPR13.pdf
-    mappedannots_names = [u''.join("none")]
-    for annot_id in range(1, np.amax(annots_map) + 1):
-        mappedannots_names.append([annots_names[i] for i in np.where(annots_map == annot_id)[0]][0])
-    if np.amax(annots_map) == 40:
-        mappedannots_names[38] = u''.join("other struct")
-        mappedannots_names[39] = u''.join("other furntr")
-        mappedannots_names[40] = u''.join("other prop")
-    np.savetxt("%s/annotation_names.txt" % output_dir, mappedannots_names, "%s")
-
+    # if class mapping is provided use it 
+    # other wise stick to the default 27 classes
+    if args.class_map is not None:
+        class_map = scipy.io.loadmat(args.class_map)
+        class_map = class_map["mapping"][0]
+        classes_names = np.loadtxt(args.class_names, "%s")
+    else:
+        class_map = range(len(classes_names))
 
     # Process and save images using either
     # single or multiple threads
@@ -210,5 +205,5 @@ if __name__ == "__main__":
     print("[INFO    ]\tData Statistics:")
     print("\t\t%d\t: Training images" % len(train_images))
     print("\t\t%d\t: Testing images" % len(test_images))
-    print("\t\t%d\t: classes" % len(classes_names))
-    print("\t\t%d\t: annotations" % len(annots_names))
+    print("\t\t%d\t: Classes" % len(classes_names))
+    print("\t\t%d\t: Annotations" % len(annots_names))
