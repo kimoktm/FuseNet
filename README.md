@@ -28,13 +28,13 @@ splits.mat                       standard train-test split
 2. Preprocess raw dataset and save results to `Datasets/NYU` using
 
     ```
-    python data/nyu_dataset_extract.py -i nyu_dataset.mat -s splits.mat -l mapping.mat -o Datasets/NYU
+    python data/nyu_dataset_extract.py -i nyu_dataset.mat -s splits.mat -a annot_mapping.mat -c class_mapping.mat -cn class_names.txt -o Datasets/NYU
     ```
 
 3. Convert extracted dataset to tfrecords `Datasets/NYU/tfrecords` using
 
    ```
-  python data/dataset_to_tfrecords.py --train_dir NYU/train --test_dir NYU/test --output_dir NYU/tfrecords --classes_file NYU/class_names.txt
+  python data/dataset_to_tfrecords.py --train_dir NYU/train --test_dir NYU/test --output_dir NYU/tfrecords --classes_file class_names.txt
   ```
 Note: There is a problem with 00222_depth is flipped horizontally
 
