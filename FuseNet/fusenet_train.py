@@ -14,6 +14,8 @@ import argparse
 import os
 import time
 import glob
+import wget
+import tarfile
 
 import data.dataset_loader as dataset_loader
 import fusenet
@@ -26,11 +28,11 @@ FLAGS = None
 def maybe_download_and_extract():
     """
     Check if tfrecords exist if not download them
-    (processed dataset into tfrecords with 41 labels & 27 classes)
+    (processed dataset into tfrecords with 40 labels & 10 classes)
     """
 
-    filenames = ['tfrecords_41_27.tar.gz']
-    url = '_'
+    filenames = ['tfrecords-train-40-10.tar.gz']
+    url = 'https://transfer.sh/UYQx3/'
 
     if not tf.gfile.Exists(FLAGS.tfrecords_dir):
         tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
@@ -38,11 +40,10 @@ def maybe_download_and_extract():
     if not tf.gfile.Exists(FLAGS.checkpoint_dir):
         tf.gfile.MakeDirs(FLAGS.checkpoint_dir)
 
-    tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
+    tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train'))
 
     if not tfrecords:
-        print('[INFO    ]\tNo tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
-        print('[WARN    ]\tData not yet uploaded. You have to do the processing')
+        print('[INFO    ]\tNo train tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
 
         for filename in filenames:
             wget.download(url + filename, out = os.path.join(FLAGS.tfrecords_dir, filename))
@@ -60,7 +61,7 @@ def load_datafiles():
     Get all tfrecords from tfrecords dir:
     """
 
-    tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test')
+    tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train')
     data_files = tf.gfile.Glob(tf_record_pattern)
 
     return data_files

@@ -60,7 +60,7 @@ def image_to_one_hot(annots_img, num_labels):
     return img_one_hot
 
 
-def load_data(file_path, width, height, one_hot = False, annots_num = 41, classes_num = 27):
+def load_data(file_path, width, height, one_hot = False, annots_num = 41, classes_num = 11):
     """
     Load data from given data paths file. Color, depth and annot
     images are resized to the specified dimensions and one_hot
