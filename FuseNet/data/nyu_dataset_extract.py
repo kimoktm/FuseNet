@@ -169,7 +169,11 @@ if __name__ == "__main__":
     if args.class_map is not None:
         class_map = scipy.io.loadmat(args.class_map)
         class_map = class_map["mapping"][0]
-        classes_names = np.loadtxt(args.class_names, "%s")
+        # subtract 1 so indices starts from 0
+        class_map = np.array(class_map, dtype = np.int16)
+        class_map -= 1
+        class_map[class_map < 0] = 0
+        classes_names = np.loadtxt(args.class_names, dtype = 'str')
     else:
         class_map = range(len(classes_names))
 
@@ -205,5 +209,5 @@ if __name__ == "__main__":
     print("[INFO    ]\tData Statistics:")
     print("\t\t%d\t: Training images" % len(train_images))
     print("\t\t%d\t: Testing images" % len(test_images))
-    print("\t\t%d\t: Classes" % len(classes_names))
-    print("\t\t%d\t: Annotations" % len(annots_names))
+    print("\t\t%d\t: Classes" % len(class_map))
+    print("\t\t%d\t: Annotations" % len(annots_map))

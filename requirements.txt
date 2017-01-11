@@ -1,4 +1,3 @@
-tensorflow>=0.12
 Pillow
 h5py
 joblib
