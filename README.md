@@ -39,7 +39,7 @@ splits.mat                       standard train-test split
 
 4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/UYQx3/tfrecords-train-40-10.tar.gz), [testing](https://transfer.sh/9a72G/tfrecords-test-40-10.tar.gz). Also when running fusenet_train.py it automatically downloads training data if not found.
 
-Note: There is a problem with 00222_depth.png is flipped horizontally make sure to filp if you are before building the tfRecords. The file is fixed in the uploaded tfRecords.
+Note: There is a problem with `00222_depth.png` that it is flipped horizontally. Make sure to flip it back before building the tfRecords. The file is fixed in the uploaded tfRecords.
 
 
 ### Training
