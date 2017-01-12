@@ -170,12 +170,19 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
         # Ensures a minimum amount of shuffling of examples.
         min_after_dequeue = 1000
         capacity = min_after_dequeue + 3 * batch_size
-
-        images, depths, annots, classes = tf.train.shuffle_batch(
+        
+        if train:
+            images, depths, annots, classes = tf.train.shuffle_batch(
                 [color_image, depth_image, annot_image, clss],
                 batch_size = batch_size, num_threads = num_preprocess_threads,
                 capacity = capacity,
                 min_after_dequeue = min_after_dequeue)
+        else:
+            # Don't shuffle batches when testing
+            images, depths, annots, classes = tf.train.batch(
+                [color_image, depth_image, annot_image, clss],
+                batch_size = batch_size, num_threads = num_preprocess_threads,
+                capacity = capacity)
 
         classes = tf.reshape(classes, [batch_size])
 
