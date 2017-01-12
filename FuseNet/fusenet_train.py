@@ -31,9 +31,6 @@ def maybe_download_and_extract():
     (processed dataset into tfrecords with 40 labels & 10 classes)
     """
 
-    filenames = ['tfrecords-train-40-10.tar.gz']
-    url = 'https://transfer.sh/UYQx3/'
-
     if not tf.gfile.Exists(FLAGS.tfrecords_dir):
         tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
 
@@ -41,10 +38,20 @@ def maybe_download_and_extract():
         tf.gfile.MakeDirs(FLAGS.checkpoint_dir)
 
     tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train'))
+    testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
+
+    url = 'https://transfer.sh/UYQx3/'
+    filenames = []
 
     if not tfrecords:
         print('[INFO    ]\tNo train tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
+        filenames.append('tfrecords-train-40-10.tar.gz')
 
+    if not testing_tfrecords:
+        print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
+        filenames.append('tfrecords-test-40-10.tar.gz')
+    
+    if len(filenames) > 0:
         for filename in filenames:
             wget.download(url + filename, out = os.path.join(FLAGS.tfrecords_dir, filename))
 
@@ -55,7 +62,7 @@ def maybe_download_and_extract():
             os.remove(os.path.join(FLAGS.tfrecords_dir, filename))
         print('[INFO    ]\tTfrecords downloaded successfully')
 
-
+    
 def load_datafiles():
     """
     Get all tfrecords from tfrecords dir:
