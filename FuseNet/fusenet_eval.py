@@ -8,12 +8,29 @@
 import tensorflow as tf
 
 import os
+import glob
 import argparse
 import data.dataset_loader as dataset_loader
+import data.tfrecords_downloader as tfrecords_downloader
 import fusenet
 
 FLAGS = None
 
+def maybe_download_and_extract():
+    """
+    Check if tfrecords exist if not download them
+    (processed dataset into tfrecords with 40 labels & 10 classes)
+    """
+    if not tf.gfile.Exists(FLAGS.tfrecords_dir):
+        tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
+
+    testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
+
+    if not testing_tfrecords:
+        print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
+        tfrecords_downloader.download_and_extract_tfrecords(False, True, FLAGS.tfrecords_dir)
+    
+        
 def load_datafiles():
     """
     Get all tfrecords from tfrecords dir:
@@ -24,7 +41,7 @@ def load_datafiles():
 
     return data_files
 
-def eval():
+def evaluate():
     """
     Eval fusenet using specified args:
     """
@@ -62,7 +79,7 @@ def eval():
     try:
         step = 0
         while not coord.should_stop():
-            acc_value = sess.run(class_acc)
+            acc_value = sess.run(seg_acc)
             print('[PROGRESS]\tSegmentation accuracy for current batch: %.3f' % acc_value)
             step += 1
 
@@ -83,7 +100,8 @@ def main(_):
     """
     Run fusenet prediction on input tfrecords
     """
-    eval()
+    maybe_download_and_extract()
+    evaluate()
 
 
 if __name__ == '__main__':

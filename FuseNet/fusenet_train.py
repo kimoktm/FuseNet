@@ -18,6 +18,7 @@ import wget
 import tarfile
 
 import data.dataset_loader as dataset_loader
+import data.tfrecords_downloader as tfrecords_downloader
 import fusenet
 
 
@@ -40,27 +41,18 @@ def maybe_download_and_extract():
     tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train'))
     testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
 
-    url = 'https://transfer.sh/UYQx3/'
-    filenames = []
+    download_training_records = False
+    download_testing_records = False
 
     if not tfrecords:
         print('[INFO    ]\tNo train tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
-        filenames.append('tfrecords-train-40-10.tar.gz')
+        download_training_records = True
 
     if not testing_tfrecords:
         print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
-        filenames.append('tfrecords-test-40-10.tar.gz')
+        download_testing_records = True
     
-    if len(filenames) > 0:
-        for filename in filenames:
-            wget.download(url + filename, out = os.path.join(FLAGS.tfrecords_dir, filename))
-
-            tar = tarfile.open(os.path.join(FLAGS.tfrecords_dir, filename))
-            tar.extractall(path = FLAGS.tfrecords_dir)
-            tar.close()
-
-            os.remove(os.path.join(FLAGS.tfrecords_dir, filename))
-        print('[INFO    ]\tTfrecords downloaded successfully')
+    tfrecords_downloader.download_and_extract_tfrecords(download_training_records, download_testing_records, FLAGS.tfrecords_dir)
 
     
 def load_datafiles():
