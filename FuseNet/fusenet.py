@@ -130,7 +130,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
 
 def segmentation_loss(logits, labels):
     """
-    Segmentaion loss:
+    Segmentation loss:
     ----------
     Args:
         logits: Tensor, predicted    [batch_size * height * width,  num_annots]
@@ -190,7 +190,68 @@ def loss(annot_logits, annots, class_logits, classes):
     return total_loss
 
 
-def train(loss, learning_rate):
+def segmentation_accuracy(logits, labels):
+    """
+    Segmentation accuracy:
+    ----------
+    Args:
+        logits: Tensor, predicted    [batch_size * height * width,  num_annots]
+        labels: Tensor, ground truth [batch_size, height, width, 1]
+
+    Returns:
+        segmentation_accuracy: Segmentation accuracy
+    """
+    
+    labels = tf.reshape(labels, [-1, 1])
+    predicted_annots = tf.argmax(logits, axis=1)
+    correct_predictions = tf.equal(predicted_annots, labels)
+    segmentation_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
+
+    return segmentation_accuracy
+
+
+def classification_accuracy(logits, labels):
+    """
+    Classification accuracy:
+    ----------
+    Args:
+        logits: Tensor, predicted    [batch_size,  num_classes]
+        labels: Tensor, ground truth [batch_size, 1]
+
+    Returns:
+        class_accuracy: Classification accuracy
+    """
+    
+    predicted_classes = tf.argmax(logits, axis=1)
+    correct_predictions = tf.equal(predicted_classes, labels)
+    class_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
+
+    return class_accuracy 
+
+    
+def accuracy(annot_logits, annots, class_logits, classes):
+    """
+    Accuracy:
+    --------
+    Args:
+        annot_logits: Tensor, predicted    [batch_size * height * width,  num_annots]
+        annots: Tensor, ground truth [batch_size, height, width, 1]
+        class_logits: Tensor, predicted    [batch_size,  num_classes]
+        classes: Tensor, ground truth [batch_size, 1]
+    
+    Returns:
+        total_accuracy: Segmentation + Classification accuracies
+        segmentation_accuracy: Segmentation accuracy
+        classification_accuracy: Classification accuracy
+    """
+    
+    segmentation_accuracy = segmentation_accuracy(annot_logits, annots)
+    classification_accuracy = classification_accuracy(class_logits, classes)
+    total_accuracy = (segmentation_accuracy + classification_accuracy)/2
+
+    return total_accuracy, segmentation_accuracy, classification_accuracy
+        
+
 def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate):
     """
     Train opetation:
