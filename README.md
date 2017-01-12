@@ -37,7 +37,7 @@ maxpool with args which only works on GPU.
   python data/dataset_to_tfrecords.py --train_dir NYU/train --test_dir NYU/test --output_dir NYU/tfrecords --classes_file class_names.txt
   ```
 
-4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/UYQx3/tfrecords-train-40-10.tar.gz), [testing](https://transfer.sh/9a72G/tfrecords-test-40-10.tar.gz). Also when running fusenet_train.py it automatically downloads training data if not found.
+4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/UYQx3/tfrecords-train-40-10.tar.gz), [testing](https://transfer.sh/9a72G/tfrecords-test-40-10.tar.gz). Also when running fusenet_train.py it automatically downloads training and test data if not found.
 
 Note: There is a problem with `00222_depth.png` that it is flipped horizontally. Make sure to flip it back before building the tfRecords. The file is fixed in the uploaded tfRecords.
 
@@ -49,11 +49,19 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
     python fusenet_train.py and pass in the paramters
     ```
 
+### Evaluation
+- To evaluate Fusenet run `fusenet_eval` passing tfrecords dir
+
+    ```
+    python fusenet_eval.py and pass in the paramters
+    ```
+
+
 ### To-Do
 - [x] Group scene classes (27) to have a good distribition since some classes only have 4 images
 - [x] Adjust nyu_extractor to use scene class mapping as well (after grouping)
 - [ ] Add Weight decay to training
-- [ ] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
+- [x] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
 - [ ] Use Weights initalization from VGG-16
 - [ ] Add Accuray measurement for evalution
 - [ ] Add `fusenet/fusenet_eval.py` to evalute and visualize prediction
