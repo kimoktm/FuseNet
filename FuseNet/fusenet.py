@@ -201,7 +201,7 @@ def segmentation_accuracy(logits, labels):
     Returns:
         segmentation_accuracy: Segmentation accuracy
     """
-    
+    labels = tf.to_int64(labels)
     labels = tf.reshape(labels, [-1, 1])
     predicted_annots = tf.argmax(logits, axis=1)
     correct_predictions = tf.equal(predicted_annots, labels)
@@ -241,15 +241,15 @@ def accuracy(annot_logits, annots, class_logits, classes):
     
     Returns:
         total_accuracy: Segmentation + Classification accuracies
-        segmentation_accuracy: Segmentation accuracy
-        classification_accuracy: Classification accuracy
+        segmentation_acc: Segmentation accuracy
+        classification_acc: Classification accuracy
     """
     
-    segmentation_accuracy = segmentation_accuracy(annot_logits, annots)
-    classification_accuracy = classification_accuracy(class_logits, classes)
-    total_accuracy = (segmentation_accuracy + classification_accuracy)/2
+    segmentation_acc = segmentation_accuracy(annot_logits, annots)
+    classification_acc = classification_accuracy(class_logits, classes)
+    total_accuracy = (segmentation_acc + classification_acc)/2
 
-    return total_accuracy, segmentation_accuracy, classification_accuracy
+    return total_accuracy, segmentation_acc, classification_acc
         
 
 def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate):
