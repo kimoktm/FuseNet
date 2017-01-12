@@ -191,19 +191,23 @@ def loss(annot_logits, annots, class_logits, classes):
 
 
 def train(loss, learning_rate):
+def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate):
     """
     Train opetation:
     ----------
     Args:
         loss: loss to use for training
         learning_rate: Float, learning rate
+        learning_rate_decay_steps: Int, amount of steps after which to reduce the learning rate
+        learning_rate_decay_rate: Float, decay rate for learning rate
 
     Returns:
         train_op: Training operation
     """
-
-    optimizer   = tf.train.AdamOptimizer(learning_rate)
+    
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
+    decayed_learning_rate = tf.train.exponential_decay(learning_rate, global_step, learning_rate_decay_steps, learning_rate_decay_rate, staircase=True)
+    optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
     train_op    = optimizer.minimize(loss, global_step = global_step)
 
     return train_op

@@ -85,6 +85,7 @@ def train():
     loss = fusenet.loss(annot_logits, annots, class_logits, classes)
 
     train_op = fusenet.train(loss, FLAGS.learning_rate)
+    train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate)
 
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
@@ -146,6 +147,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
+    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
     parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 10)
 
