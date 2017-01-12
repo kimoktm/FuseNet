@@ -84,7 +84,6 @@ def train():
 
     loss = fusenet.loss(annot_logits, annots, class_logits, classes)
 
-    train_op = fusenet.train(loss, FLAGS.learning_rate)
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate)
 
     init_op = tf.group(tf.global_variables_initializer(),
