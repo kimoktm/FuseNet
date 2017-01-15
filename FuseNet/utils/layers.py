@@ -37,9 +37,9 @@ def conv(inputs, kernel_size, num_outputs, name,
         stride_shape   = [1, stride_size[0], stride_size[1], 1]
 
         weights = tf.get_variable('weights', kernel_shape, tf.float32, xavier_initializer())
-        biases  = tf.get_variable('biases', [num_outputs], tf.float32, tf.constant_initializer(0.0))
+        bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv    = tf.nn.conv2d(inputs, weights, stride_shape, padding = padding)
-        outputs = tf.nn.bias_add(conv, biases)
+        outputs = tf.nn.bias_add(conv, bias)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)
@@ -72,9 +72,9 @@ def conv_btn(inputs, kernel_size, num_outputs, name,
         stride_shape   = [1, stride_size[0], stride_size[1], 1]
 
         weights = tf.get_variable('weights', kernel_shape, tf.float32, xavier_initializer())
-        biases  = tf.get_variable('biases', [num_outputs], tf.float32, tf.constant_initializer(0.0))
+        bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv    = tf.nn.conv2d(inputs, weights, stride_shape, padding = padding)
-        outputs = tf.nn.bias_add(conv, biases)
+        outputs = tf.nn.bias_add(conv, bias)
         outputs = tf_layers.batch_norm(outputs, is_training = is_training)
 
         if activation_fn is not None:
@@ -109,9 +109,9 @@ def deconv(inputs, kernel_size, num_filters_in, num_outputs, name,
         output_shape = tf.pack([input_shape[0], input_shape[1], input_shape[2], num_outputs])
 
         weights = tf.get_variable('weights', kernel_shape, tf.float32, xavier_initializer())
-        biases  = tf.get_variable('biases', [num_outputs], tf.float32, tf.constant_initializer(0.0))
+        bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv_trans = tf.nn.conv2d_transpose(inputs, weights, output_shape, stride_shape, padding = padding)
-        outputs    = tf.nn.bias_add(conv_trans, biases)
+        outputs    = tf.nn.bias_add(conv_trans, bias)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)
@@ -146,9 +146,9 @@ def deconv_btn(inputs, kernel_size, num_filters_in, num_outputs, name,
         output_shape = tf.pack([input_shape[0], input_shape[1], input_shape[2], num_outputs])
 
         weights = tf.get_variable('weights', kernel_shape, tf.float32, xavier_initializer())
-        biases  = tf.get_variable('biases', [num_outputs], tf.float32, tf.constant_initializer(0.0))
+        bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv_trans = tf.nn.conv2d_transpose(inputs, weights, output_shape, stride_shape, padding = padding)
-        outputs    = tf.nn.bias_add(conv_trans, biases)
+        outputs    = tf.nn.bias_add(conv_trans, bias)
         outputs    = tf_layers.batch_norm(outputs, is_training = is_training)
 
         if activation_fn is not None:
@@ -219,9 +219,9 @@ def fully_connected(inputs, num_outputs, name, activation_fn = tf.nn.relu):
         num_filters_in = inputs.get_shape()[-1].value
 
         weights = tf.get_variable('weights', [num_filters_in, num_outputs], tf.float32, xavier_initializer())
-        biases  = tf.get_variable('biases', [num_outputs], tf.float32, tf.constant_initializer(0.0))
+        bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         outputs = tf.matmul(inputs, weights)
-        outputs = tf.nn.bias_add(outputs, biases)
+        outputs = tf.nn.bias_add(outputs, bias)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)

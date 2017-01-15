@@ -125,7 +125,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     f6_drop      = layers.dropout(fconnected6, dropout_keep_prob, 'fc6drop')
     fconnected7  = layers.fully_connected(f6_drop, 4096, 'fc7')
     f7_drop      = layers.dropout(fconnected7, dropout_keep_prob, 'fc7drop')
-    class_logits = layers.fully_connected(f7_drop, num_classes, 'fc8')
+    class_logits = layers.fully_connected(f7_drop, num_classes, 'fc8', activation_fn = None)
 
     return annot_logits, class_logits
 

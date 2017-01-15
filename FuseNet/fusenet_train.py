@@ -113,7 +113,8 @@ def train():
 
             if step % 100 == 0:
                 print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
-                print('\t\tTraining segmentation accuracy =  %.2f, classifcation accuracy = %.2f, total accuracy = %.2f' % (acc_seg_value, acc_clss_value, acc_total_value))
+                print('\t\tTraining segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
+                     % (acc_seg_value, acc_clss_value, acc_total_value))
 
                 saver.save(sess, FLAGS.checkpoint_dir, global_step = step)
             step += 1
