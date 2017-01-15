@@ -154,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
-    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 10)
+    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
 
     FLAGS, unparsed = parser.parse_known_args()
 
