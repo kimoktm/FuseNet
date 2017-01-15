@@ -121,9 +121,11 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
 
     # Classification
     flattend     = layers.flatten(conv5_fuse, 'flatten')
-    fconnected6  = layers.fully_connected(flattend,    4096, 'fc6')
-    fconnected7  = layers.fully_connected(fconnected6, 4096, 'fc7')
-    class_logits = layers.fully_connected(fconnected7, num_classes, 'fc8')
+    fconnected6  = layers.fully_connected(flattend, 4096, 'fc6')
+    f6_drop      = layers.dropout(fconnected6, dropout_keep_prob, 'fc6drop')
+    fconnected7  = layers.fully_connected(f6_drop, 4096, 'fc7')
+    f7_drop      = layers.dropout(fconnected7, dropout_keep_prob, 'fc7drop')
+    class_logits = layers.fully_connected(f7_drop, num_classes, 'fc8')
 
     return annot_logits, class_logits
 
@@ -201,6 +203,7 @@ def segmentation_accuracy(logits, labels):
     Returns:
         segmentation_accuracy: Segmentation accuracy
     """
+
     labels = tf.to_int64(labels)
     labels = tf.reshape(labels, [-1, 1])
     predicted_annots = tf.argmax(logits, axis=1)
@@ -267,7 +270,8 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
     """
     
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
-    decayed_learning_rate = tf.train.exponential_decay(learning_rate, global_step, learning_rate_decay_steps, learning_rate_decay_rate, staircase=True)
+    decayed_learning_rate = tf.train.exponential_decay(learning_rate, global_step, 
+                            learning_rate_decay_steps, learning_rate_decay_rate, staircase = True)
     optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
     train_op    = optimizer.minimize(loss, global_step = global_step)
 

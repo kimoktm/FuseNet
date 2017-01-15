@@ -81,6 +81,8 @@ def train():
 
     annot_logits, class_logits = fusenet.build(images, depths, FLAGS.num_annots, FLAGS.num_classes, True)
 
+    total_acc, seg_acc, class_acc = fusenet.accuracy(annot_logits, annots, class_logits, classes)
+
     loss = fusenet.loss(annot_logits, annots, class_logits, classes)
 
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate)
@@ -105,11 +107,14 @@ def train():
 
             _, loss_value = sess.run([train_op, loss])
 
+            acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
+
             duration = time.time() - start_time
 
             if step % 100 == 0:
-                print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec), saving checkpoint' % (step, loss_value,
-                                                         duration))
+                print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
+                print('\t\tTraining segmentation accuracy =  %.2f, classifcation accuracy = %.2f, total accuracy = %.2f' % (acc_seg_value, acc_clss_value, acc_total_value))
+
                 saver.save(sess, FLAGS.checkpoint_dir, global_step = step)
             step += 1
 
