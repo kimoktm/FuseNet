@@ -66,6 +66,32 @@ def load_datafiles():
     return data_files
 
 
+def use_vgg_weights(sess):
+    """
+    Load VGG weights:
+    """
+
+    if FLAGS.vgg_path not None:
+        data_dict = np.load(FLAGS.vgg_path, encoding = 'latin1').item()
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+
+        for v in variables:
+            v_n = v.name[0:-2].split('/')
+            if v_n[0] in data_dict:
+                if v.name.endswith('weights:0'):
+                    if np.array_equal(v.get_shape(), data_dict[v_n[0]][0].shape):
+                        print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
+                        sess.run(v.assign(data_dict[v_n[0]][0]))
+                elif v.name.endswith('bias:0'):
+                    if np.array_equal(v.get_shape(), data_dict[v_n[0]][1].shape):
+                        print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
+                        sess.run(v.assign(data_dict[v_n[0]][1]))
+                else:
+                    print('[PROGRESS]\tNot found %s' % v.name[0:-2])
+
+        print('[INFO    ]\tVGG weights loading complelte')
+
+
 def train():
     """
     Train fusenet using specified args:
@@ -93,6 +119,8 @@ def train():
     sess = tf.Session()
 
     sess.run(init_op)
+
+    use_vgg_weights(sess)
 
     saver = tf.train.Saver()
 
@@ -154,6 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
+    parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if not set')
     parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
 
     FLAGS, unparsed = parser.parse_known_args()

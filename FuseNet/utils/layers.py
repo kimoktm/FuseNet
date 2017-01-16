@@ -13,6 +13,7 @@ from tensorflow.contrib.layers.python.layers import layers as tf_layers
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import gen_nn_ops
 
+
 def conv(inputs, kernel_size, num_outputs, name,
         stride_size = [1, 1], padding = 'SAME', activation_fn = tf.nn.relu):
     """

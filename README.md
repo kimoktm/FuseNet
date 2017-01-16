@@ -49,6 +49,12 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
     python fusenet_train.py and pass in the paramters
     ```
 
+    To use VGG weights download converted caffe model [here vgg16.npy](https://dl.dropboxusercontent.com/u/50333326/vgg16.npy) and link it as follow:
+
+    ```
+    python fusenet_train.py --vgg_path vgg16.npy and pass in the rest of the paramters
+    ```
+
 ### Evaluation
 - To evaluate Fusenet run `fusenet_eval` passing tfrecords dir
 
@@ -62,7 +68,7 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
 - [x] Adjust nyu_extractor to use scene class mapping as well (after grouping)
 - [ ] Add Weight decay to training
 - [x] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
-- [ ] Use Weights initalization from VGG-16
+- [x] Use Weights initalization from VGG-16
 - [ ] Add Accuray measurement for evalution
 - [ ] Add `fusenet/fusenet_eval.py` to evalute and visualize prediction
 
