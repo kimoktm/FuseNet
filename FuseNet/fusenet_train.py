@@ -71,7 +71,7 @@ def use_vgg_weights(sess):
     Load VGG weights:
     """
 
-    if FLAGS.vgg_path not None:
+    if FLAGS.vgg_path is not None:
         data_dict = np.load(FLAGS.vgg_path, encoding = 'latin1').item()
         variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
 
@@ -89,7 +89,7 @@ def use_vgg_weights(sess):
                 else:
                     print('[PROGRESS]\tNot found %s' % v.name[0:-2])
 
-        print('[INFO    ]\tVGG weights loading complelte')
+        print('[INFO    ]\tVGG weights loading complete')
 
 
 def train():
@@ -109,7 +109,7 @@ def train():
 
     total_acc, seg_acc, class_acc = fusenet.accuracy(annot_logits, annots, class_logits, classes)
 
-    loss = fusenet.loss(annot_logits, annots, class_logits, classes)
+    loss = fusenet.loss(annot_logits, annots, class_logits, classes, FLAGS.weight_decay_rate)
 
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate)
 
@@ -121,7 +121,7 @@ def train():
     sess.run(init_op)
 
     use_vgg_weights(sess)
-
+    
     saver = tf.train.Saver()
 
     coord = tf.train.Coordinator()
@@ -181,6 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
     parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
+    parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0001)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if not set')
     parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)

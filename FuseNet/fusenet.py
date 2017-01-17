@@ -170,8 +170,19 @@ def classification_loss(logits, labels):
 
     return class_loss
 
-
-def loss(annot_logits, annots, class_logits, classes):
+def l2_loss():
+    """
+    L2 loss:
+    -------
+    Returns:
+        l2_loss: L2 loss for all weights
+    """
+    
+    weights = [var for var in tf.trainable_variables() if var.name.endswith('weights:0')]
+    l2_loss = tf.add_n([tf.nn.l2_loss(w) for w in weights])
+    return l2_loss
+    
+def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
     """
     Total loss:
     ----------
@@ -180,14 +191,15 @@ def loss(annot_logits, annots, class_logits, classes):
         annots: Tensor, ground truth [batch_size, height, width, 1]
         class_logits: Tensor, predicted    [batch_size,  num_classes]
         classes: Tensor, ground truth [batch_size, 1]
+        weight_decay_factor: float, factor with which weights are decayed
 
     Returns:
-        total_loss: Segmentation + Classification losses
+        total_loss: Segmentation + Classification losses + WeightDecayFactor * L2 loss
     """
 
     segment_loss = segmentation_loss(annot_logits, annots)
     class_loss   = classification_loss(class_logits, classes)
-    total_loss   = segment_loss + class_loss
+    total_loss   = segment_loss + class_loss + weight_decay_factor * l2_loss()
 
     return total_loss
 
