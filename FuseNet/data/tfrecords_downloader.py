@@ -23,19 +23,18 @@ def download_and_extract_tfrecords(download_training_records, download_testing_r
     if not tf.gfile.Exists(output_dir):
         tf.gfile.MakeDirs(output_dir)
 
-    url = 'https://transfer.sh/UYQx3/'
-    filenames = []
+    urls = []
 
     if download_training_records:
-        filenames.append('tfrecords-train-40-10.tar.gz')
+        urls.append('https://transfer.sh/UYQx3/tfrecords-train-40-10.tar.gz')
 
     if download_testing_records:
-        filenames.append('tfrecords-test-40-10.tar.gz')
+        urls.append('https://transfer.sh/9a72G/tfrecords-test-40-10.tar.gz')
     
-    if len(filenames) > 0:
-        for filename in filenames:
-            filepath = os.path.join(output_dir, filename)
-            wget.download(url + filename, out = filepath)
+    if len(urls) > 0:
+        for url in urls:
+            filepath = os.path.join(output_dir, 'tmp')
+            wget.download(url, out = filepath)
 
             tar = tarfile.open(filepath)
             tar.extractall(path = output_dir)
