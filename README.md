@@ -66,7 +66,7 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
 ### To-Do
 - [x] Group scene classes (27) to have a good distribition since some classes only have 4 images
 - [x] Adjust nyu_extractor to use scene class mapping as well (after grouping)
-- [ ] Add Weight decay to training
+- [x] Add Weight decay to training
 - [x] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
 - [x] Use Weights initalization from VGG-16
 - [ ] Add Accuray measurement for evalution
