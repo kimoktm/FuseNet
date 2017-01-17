@@ -5,22 +5,28 @@
 # Eval fusnet with processed dataset in tfrecords format         #
 # ============================================================== #
 
+from __future__ import print_function
+
 import tensorflow as tf
 
 import os
 import glob
 import argparse
+
 import data.dataset_loader as dataset_loader
 import data.tfrecords_downloader as tfrecords_downloader
 import fusenet
 
+# Basic model parameters as external flags.
 FLAGS = None
+
 
 def maybe_download_and_extract():
     """
     Check if tfrecords exist if not download them
     (processed dataset into tfrecords with 40 labels & 10 classes)
     """
+
     if not tf.gfile.Exists(FLAGS.tfrecords_dir):
         tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
 
@@ -29,8 +35,8 @@ def maybe_download_and_extract():
     if not testing_tfrecords:
         print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
         tfrecords_downloader.download_and_extract_tfrecords(False, True, FLAGS.tfrecords_dir)
-    
-        
+
+
 def load_datafiles():
     """
     Get all tfrecords from tfrecords dir:
@@ -40,6 +46,7 @@ def load_datafiles():
     data_files = tf.gfile.Glob(tf_record_pattern)
 
     return data_files
+
 
 def evaluate():
     """
@@ -93,7 +100,6 @@ def evaluate():
     # Wait for threads to finish.
     coord.join(threads)
     sess.close()
-
     
 
 def main(_):

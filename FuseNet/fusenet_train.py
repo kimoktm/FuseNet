@@ -14,8 +14,6 @@ import argparse
 import os
 import time
 import glob
-import wget
-import tarfile
 
 import data.dataset_loader as dataset_loader
 import data.tfrecords_downloader as tfrecords_downloader
@@ -42,19 +40,14 @@ def maybe_download_and_extract():
     testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
 
     download_training_records = False
-    download_testing_records = False
 
     if not tfrecords:
         print('[INFO    ]\tNo train tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
         download_training_records = True
-
-    if not testing_tfrecords:
-        print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
-        download_testing_records = True
     
-    tfrecords_downloader.download_and_extract_tfrecords(download_training_records, download_testing_records, FLAGS.tfrecords_dir)
+    tfrecords_downloader.download_and_extract_tfrecords(download_training_records, False, FLAGS.tfrecords_dir)
 
-    
+
 def load_datafiles():
     """
     Get all tfrecords from tfrecords dir:
@@ -66,7 +59,7 @@ def load_datafiles():
     return data_files
 
 
-def use_vgg_weights(sess):
+def load_vgg_weights(sess):
     """
     Load VGG weights:
     """
@@ -76,18 +69,26 @@ def use_vgg_weights(sess):
         variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
 
         for v in variables:
-            v_n = v.name[0:-2].split('/')
-            if v_n[0] in data_dict:
+            variable_name  = v.name[0:-2].split('/')
+            layer_name     = variable_name[0]
+            vgg_layer_name = layer_name[2:] if layer_name.startswith('d_') else layer_name
+
+            if vgg_layer_name in data_dict:
                 if v.name.endswith('weights:0'):
-                    if np.array_equal(v.get_shape(), data_dict[v_n[0]][0].shape):
+                    if variable_name[0] == 'd_conv1_1':
+                        print('[PROGRESS]\tAssigning %s by averaging rgb to one channel' % v.name[0:-2])
+                        # average rgb weights to one channel weights (x, y, 3, z) -> (x, y, 1, z)
+                        avg_weights = np.mean(data_dict[vgg_layer_name][0], axis = 2, keepdims = True)
+                        sess.run(v.assign(avg_weights))
+                    if np.array_equal(v.get_shape(), data_dict[vgg_layer_name][0].shape):
                         print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
-                        sess.run(v.assign(data_dict[v_n[0]][0]))
+                        sess.run(v.assign(data_dict[vgg_layer_name][0]))
                 elif v.name.endswith('bias:0'):
-                    if np.array_equal(v.get_shape(), data_dict[v_n[0]][1].shape):
+                    if np.array_equal(v.get_shape(), data_dict[vgg_layer_name][1].shape):
                         print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
-                        sess.run(v.assign(data_dict[v_n[0]][1]))
+                        sess.run(v.assign(data_dict[vgg_layer_name][1]))
                 else:
-                    print('[PROGRESS]\tNot found %s' % v.name[0:-2])
+                    print('[WARNING ]\tSkipping %s as its not found in VGG' % v.name[0:-2])
 
         print('[INFO    ]\tVGG weights loading complete')
 
@@ -120,7 +121,7 @@ def train():
 
     sess.run(init_op)
 
-    use_vgg_weights(sess)
+    load_vgg_weights(sess)
     
     saver = tf.train.Saver()
 
@@ -159,7 +160,6 @@ def train():
     sess.close()
 
 
-
 def main(_):
     """
     Download processed dataset if missing & train
@@ -181,10 +181,10 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
     parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
-    parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0001)
+    parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
-    parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if not set')
-    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
+    parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.py')
+    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 5000)
 
     FLAGS, unparsed = parser.parse_known_args()
 
