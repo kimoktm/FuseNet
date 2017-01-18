@@ -218,7 +218,7 @@ def segmentation_accuracy(logits, labels):
 
     labels = tf.to_int64(labels)
     labels = tf.reshape(labels, [-1, 1])
-    predicted_annots = tf.argmax(logits, axis=1)
+    predicted_annots = tf.reshape(tf.argmax(logits, axis=1), [-1, 1])
     correct_predictions = tf.equal(predicted_annots, labels)
     segmentation_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
