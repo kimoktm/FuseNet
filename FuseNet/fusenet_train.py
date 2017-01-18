@@ -17,6 +17,7 @@ import glob
 
 import data.dataset_loader as dataset_loader
 import data.tfrecords_downloader as tfrecords_downloader
+import utils.tools as tools
 import fusenet
 
 
@@ -59,40 +60,6 @@ def load_datafiles():
     return data_files
 
 
-def load_vgg_weights(sess):
-    """
-    Load VGG weights:
-    """
-
-    if FLAGS.vgg_path is not None:
-        data_dict = np.load(FLAGS.vgg_path, encoding = 'latin1').item()
-        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-
-        for v in variables:
-            variable_name  = v.name[0:-2].split('/')
-            layer_name     = variable_name[0]
-            vgg_layer_name = layer_name[2:] if layer_name.startswith('d_') else layer_name
-
-            if vgg_layer_name in data_dict:
-                if v.name.endswith('weights:0'):
-                    if variable_name[0] == 'd_conv1_1':
-                        print('[PROGRESS]\tAssigning %s by averaging rgb to one channel' % v.name[0:-2])
-                        # average rgb weights to one channel weights (x, y, 3, z) -> (x, y, 1, z)
-                        avg_weights = np.mean(data_dict[vgg_layer_name][0], axis = 2, keepdims = True)
-                        sess.run(v.assign(avg_weights))
-                    if np.array_equal(v.get_shape(), data_dict[vgg_layer_name][0].shape):
-                        print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
-                        sess.run(v.assign(data_dict[vgg_layer_name][0]))
-                elif v.name.endswith('bias:0'):
-                    if np.array_equal(v.get_shape(), data_dict[vgg_layer_name][1].shape):
-                        print('[PROGRESS]\tAssigning %s' % v.name[0:-2])
-                        sess.run(v.assign(data_dict[vgg_layer_name][1]))
-                else:
-                    print('[WARNING ]\tSkipping %s as its not found in VGG' % v.name[0:-2])
-
-        print('[INFO    ]\tVGG weights loading complete')
-
-
 def train():
     """
     Train fusenet using specified args:
@@ -121,7 +88,7 @@ def train():
 
     sess.run(init_op)
 
-    load_vgg_weights(sess)
+    tools.load_vgg_weights(FLAGS.vgg_path, tf.get_default_graph(), sess)
     
     saver = tf.train.Saver()
 

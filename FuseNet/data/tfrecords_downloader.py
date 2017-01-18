@@ -10,6 +10,7 @@ import os
 import wget
 import tarfile
 
+
 def download_and_extract_tfrecords(download_training_records, download_testing_records, output_dir):
     """
     Downloads and extracts tfrecords
