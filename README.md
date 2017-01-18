@@ -55,6 +55,7 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
     ```
     python fusenet_train.py --vgg_path vgg16.npy and pass in the rest of the paramters
     ```
+    Note: Depth layers weights will also be initialized with their vgg16 equivalent layers. However, for 'conv1_1' the weights will be averaged to fit one channel depth input (3, 3, 3, 64) -> (3, 3, 1, 64)
 
 ### Evaluation
 - To evaluate Fusenet run `fusenet_eval` passing tfrecords dir
