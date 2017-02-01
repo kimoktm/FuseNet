@@ -116,7 +116,8 @@ def train():
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
-                saver.save(sess, FLAGS.checkpoint_dir, global_step = global_step)
+                checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet.ckpt')
+                saver.save(sess, checkpoint_path, global_step = global_step)
 
     except tf.errors.OutOfRangeError:
         print('[INFO    ]\tDone training for %d epochs, %d steps.' % (FLAGS.num_epochs, step))
