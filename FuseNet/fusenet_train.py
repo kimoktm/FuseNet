@@ -34,8 +34,6 @@ def maybe_download_and_extract():
     if not tf.gfile.Exists(FLAGS.tfrecords_dir):
         tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
 
-    if not tf.gfile.Exists(FLAGS.checkpoint_dir):
-        tf.gfile.MakeDirs(FLAGS.checkpoint_dir)
 
     tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train'))
     testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
@@ -60,6 +58,14 @@ def load_datafiles():
     return data_files
 
 
+def initialize_session(sess):
+    """
+    Initializes a new session that wasn't loaded from a checkpoint
+    """
+    print('[INFO    ]\tCreated a new session without restoring checkpoint, loading vgg weights')
+    tools.load_vgg_weights(FLAGS.vgg_path, tf.get_default_graph(), sess)
+
+    
 def train():
     """
     Train fusenet using specified args:
@@ -79,41 +85,36 @@ def train():
 
     loss = fusenet.loss(annot_logits, annots, class_logits, classes, FLAGS.weight_decay_rate)
 
-    train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate)
+    global_step = tf.Variable(0, name = 'global_step', trainable = False)
+    train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate, global_step)
 
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
 
-    sess = tf.Session()
-
-    sess.run(init_op)
-
-    tools.load_vgg_weights(FLAGS.vgg_path, tf.get_default_graph(), sess)
-    
     saver = tf.train.Saver()
+    session_manager = tf.train.SessionManager()
 
+    sess = session_manager.prepare_session("", init_op=init, saver=saver, checkpoint_dir=FLAGS.checkpoint_dir, init_fn=initialize_session)
+    
     coord = tf.train.Coordinator()
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
 
     try:
-        step = 0
         while not coord.should_stop():
             start_time = time.time()
-
             _, loss_value = sess.run([train_op, loss])
-
-            acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
-
             duration = time.time() - start_time
 
+            step = tf.train.global_step(sess, global_step)
             if step % 100 == 0:
+                acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
+                
                 print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
                 print('\t\tTraining segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
 
-                saver.save(sess, FLAGS.checkpoint_dir, global_step = step)
-            step += 1
+                saver.save(sess, FLAGS.checkpoint_dir, global_step = global_step)
 
     except tf.errors.OutOfRangeError:
         print('[INFO    ]\tDone training for %d epochs, %d steps.' % (FLAGS.num_epochs, step))
@@ -131,6 +132,10 @@ def main(_):
     """
     Download processed dataset if missing & train
     """
+
+    if not tf.gfile.Exists(FLAGS.checkpoint_dir):
+        print('[INFO    ]\tCheckpoint directory does not exist, creating directory: ' + os.path.abspath(FLAGS.checkpoint_dir))
+        tf.gfile.MakeDirs(FLAGS.checkpoint_dir)
 
     maybe_download_and_extract()
     train()

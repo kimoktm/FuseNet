@@ -267,7 +267,7 @@ def accuracy(annot_logits, annots, class_logits, classes):
     return total_accuracy, segmentation_acc, classification_acc
         
 
-def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate):
+def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate, global_step):
     """
     Train opetation:
     ----------
@@ -281,7 +281,6 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
         train_op: Training operation
     """
     
-    global_step = tf.Variable(0, name = 'global_step', trainable = False)
     decayed_learning_rate = tf.train.exponential_decay(learning_rate, global_step, 
                             learning_rate_decay_steps, learning_rate_decay_rate, staircase = True)
     optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
