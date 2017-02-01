@@ -71,9 +71,8 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
 - [x] Add Weight decay to training
 - [x] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
 - [x] Use Weights initalization from VGG-16
-- [ ] Add Accuray measurement for evalution
+- [x] Add Accuray measurement for evalution
 - [ ] Add `fusenet/fusenet_eval.py` to evalute and visualize prediction
-
 
 ### Citing FuseNet
 Caner Hazirbas, Lingni Ma, Csaba Domokos and Daniel Cremers, _"FuseNet: Incorporating Depth into Semantic Segmentation via Fusion-based CNN Architecture"_, in proceedings of the 13th Asian Conference on Computer Vision, 2016. ([pdf](https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf))
