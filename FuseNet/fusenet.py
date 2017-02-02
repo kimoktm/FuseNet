@@ -287,3 +287,19 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
     train_op    = optimizer.minimize(loss, global_step = global_step)
 
     return train_op
+
+def predictions(annot_logits, batch_size, image_size):
+    """
+    Prediction operation:
+    ----------------
+    Args:
+        annot_logits: Tensor, predicted    [batch_size * height * width, num_annots]
+        batch_size: Int, batch size
+        image_size: Int, image width/height
+    
+    Returns:
+        predicted_images: Tensor, predicted images   [batch_size, image_size, image_size]
+    """
+
+    predicted_images = tf.reshape(tf.argmax(annot_logits, axis=1), [batch_size, image_size, image_size])
+    return predicted_images

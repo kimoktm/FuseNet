@@ -16,6 +16,8 @@ import argparse
 import data.dataset_loader as dataset_loader
 import data.tfrecords_downloader as tfrecords_downloader
 import fusenet
+from PIL import Image
+import numpy as np
 
 # Basic model parameters as external flags.
 FLAGS = None
@@ -47,21 +49,41 @@ def load_datafiles():
 
     return data_files
 
+def maybe_save_images(images, filenames):
+    """
+    Save images to disk
+    -------------
+    Args:
+        images: numpy array     [batch_size, image_size, image_size]
+        filenames: numpy string array, filenames corresponding to the images   [batch_size]
+    """
 
+    if FLAGS.output_dir is not None:
+        batch_size = images.shape[0]
+        for i in xrange(batch_size):
+            image_array = images[i, :, :]
+            file_path = os.path.join(FLAGS.output_dir, filenames[i])
+            image = Image.fromarray(np.uint8(image_array))
+            image.save(file_path)
+    
+    
 def evaluate():
     """
     Eval fusenet using specified args:
     """
 
     data_files = load_datafiles()
-    images, depths, annots, classes = dataset_loader.inputs(
-                                            data_files = data_files,
-                                            image_size = FLAGS.image_size,
-                                            batch_size = FLAGS.batch_size,
-                                            num_epochs = 1,
-                                            train = False)
+    images, depths, annots, classes, filenames = dataset_loader.inputs(
+                                                     data_files = data_files,
+                                                     image_size = FLAGS.image_size,
+                                                     batch_size = FLAGS.batch_size,
+                                                     num_epochs = 1,
+                                                     train = False)
 
     annot_logits, class_logits = fusenet.build(images, depths, FLAGS.num_annots, FLAGS.num_classes, False)
+
+    predicted_images = fusenet.predictions(annot_logits, FLAGS.batch_size, FLAGS.image_size)
+    
     total_acc, seg_acc , class_acc = fusenet.accuracy(annot_logits, annots, class_logits, classes)
     
     init_op = tf.group(tf.global_variables_initializer(),
@@ -86,7 +108,8 @@ def evaluate():
     try:
         step = 0
         while not coord.should_stop():
-            acc_value = sess.run(seg_acc)
+            acc_value, predicted_images_value, filenames_value = sess.run([seg_acc, predicted_images, filenames])
+            maybe_save_images(predicted_images_value, filenames_value)
             print('[PROGRESS]\tSegmentation accuracy for current batch: %.3f' % acc_value)
             step += 1
 
@@ -107,6 +130,12 @@ def main(_):
     Run fusenet prediction on input tfrecords
     """
     maybe_download_and_extract()
+
+    if FLAGS.output_dir is not None:
+        if not tf.gfile.Exists(FLAGS.output_dir):
+            print('[INFO    ]\tOutput directory does not exist, creating directory: ' + os.path.abspath(FLAGS.output_dir))
+            tf.gfile.MakeDirs(FLAGS.output_dir)
+        
     evaluate()
 
 
@@ -120,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
     parser.add_argument('--visualize', help = 'Visualize predicted annotations', type = bool, default = False)
+    parser.add_argument('--output_dir', help = 'Output directory for the prediction files. If this is not set then predictions will not be saved')
     
     FLAGS, unparsed = parser.parse_known_args()
 

@@ -34,14 +34,15 @@ def inputs(data_files, train, batch_size, image_size,
         depths: Depth images. 4D tensor of size [batch_size, image_size, image_size, 1]
         images: Annotations images. 4D tensor of size [batch_size, image_size, image_size, 1]
         classes: 1-D integer Tensor of [batch_size]
+        filenames: 1-D string Tensor of [batch_size]
     """
 
-    images, depths, annots, classes = batch_inputs(data_files = data_files, 
+    images, depths, annots, classes, filenames = batch_inputs(data_files = data_files, 
                     batch_size = batch_size, image_size = image_size,
                     train = train, num_epochs = num_epochs,
                     num_preprocess_threads = num_preprocess_threads)
 
-    return images, depths, annots, classes
+    return images, depths, annots, classes, filenames
 
 
 def image_preprocessing(image, image_size, is_color, scope = None):
@@ -85,6 +86,7 @@ def parse_example_proto(example_serialized, image_format):
         depth_image: Tensor decoded depth image
         annot_image: Tensor decoded annotation image
         clss: Tensor image class id
+        filename: Tensor file name
     """
 
     feature_map = {
@@ -94,14 +96,16 @@ def parse_example_proto(example_serialized, image_format):
         'image/class': tf.FixedLenFeature([1], dtype = tf.int64, default_value = -1),
         'image/encoded/color': tf.FixedLenFeature([], dtype = tf.string, default_value = ''),
         'image/encoded/depth': tf.FixedLenFeature([], dtype = tf.string, default_value = ''),
-        'image/encoded/annot': tf.FixedLenFeature([], dtype = tf.string, default_value = '')                           
+        'image/encoded/annot': tf.FixedLenFeature([], dtype = tf.string, default_value = ''),
+        'image/filename': tf.FixedLenFeature([], dtype = tf.string, default_value = '')
     }
 
     features     = tf.parse_single_example(example_serialized, feature_map)
     height       = tf.cast(features['image/height'], dtype = tf.int32)
     width        = tf.cast(features['image/width'], dtype = tf.int32)
     clss         = tf.cast(features['image/class'], dtype = tf.int32)
-
+    filename     = tf.cast(features['image/filename'], dtype = tf.string)
+    
     if image_format.lower().endswith(('png')):
       color_image = tf.image.decode_png(features['image/encoded/color'])
       depth_image = tf.image.decode_png(features['image/encoded/depth'])
@@ -118,7 +122,7 @@ def parse_example_proto(example_serialized, image_format):
     depth_image = tf.reshape(depth_image, annot_shape)
     annot_image = tf.reshape(annot_image, annot_shape)
 
-    return color_image, depth_image, annot_image, clss
+    return color_image, depth_image, annot_image, clss, filename
 
 
 def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_preprocess_threads):
@@ -137,6 +141,7 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
         depths: 4-D float Tensor of a batch of resized depth images
         annots: 4-D float Tensor of a batch of resized annotation images
         classes: 4-D float Tensor of a batch of image class ids
+        filenames: 1-D string Tensor of a batch of image filenames
     """
 
     with tf.name_scope('batch_processing'):
@@ -152,7 +157,7 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
         reader = tf.TFRecordReader()
         _, example_serialized = reader.read(filename_queue)
 
-        color_image, depth_image, annot_image, clss = parse_example_proto(example_serialized, IMAGE_FORMAT)
+        color_image, depth_image, annot_image, clss, filename = parse_example_proto(example_serialized, IMAGE_FORMAT)
         color_image = image_preprocessing(color_image, image_size, is_color = True)
         depth_image = image_preprocessing(depth_image, image_size, is_color = False)
         annot_image = image_preprocessing(annot_image, image_size, is_color = False)
@@ -172,18 +177,18 @@ def batch_inputs(data_files, batch_size, image_size, train, num_epochs, num_prep
         capacity = min_after_dequeue + 3 * batch_size
         
         if train:
-            images, depths, annots, classes = tf.train.shuffle_batch(
-                [color_image, depth_image, annot_image, clss],
+            images, depths, annots, classes, filenames = tf.train.shuffle_batch(
+                [color_image, depth_image, annot_image, clss, filename],
                 batch_size = batch_size, num_threads = num_preprocess_threads,
                 capacity = capacity,
                 min_after_dequeue = min_after_dequeue)
         else:
             # Don't shuffle batches when testing
-            images, depths, annots, classes = tf.train.batch(
-                [color_image, depth_image, annot_image, clss],
+            images, depths, annots, classes, filenames = tf.train.batch(
+                [color_image, depth_image, annot_image, clss, filename],
                 batch_size = batch_size, num_threads = num_preprocess_threads,
                 capacity = capacity)
 
         classes = tf.reshape(classes, [batch_size])
 
-        return images, depths, annots, classes
+        return images, depths, annots, classes, filenames

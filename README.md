@@ -64,6 +64,11 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
     python fusenet_eval.py and pass in the paramters
     ```
 
+    To save the predicted annotations as png files, pass in an output directory to the eval script
+
+    ```
+    python fusenet_eval.py --output_dir predictions
+    ```
 
 ### To-Do
 - [x] Group scene classes (27) to have a good distribition since some classes only have 4 images
@@ -72,7 +77,8 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
 - [x] Add decay rate to learning (multiply by 0.9 in every 50,000 iterations)
 - [x] Use Weights initalization from VGG-16
 - [x] Add Accuray measurement for evalution
-- [ ] Add `fusenet/fusenet_eval.py` to evalute and visualize prediction
+- [x] Add `fusenet/fusenet_eval.py` to evalute save predictions
+- [ ] Add `fusenet/fusenet_visualize.py` to compare predictions to ground truth for a single image
 
 ### Citing FuseNet
 Caner Hazirbas, Lingni Ma, Csaba Domokos and Daniel Cremers, _"FuseNet: Incorporating Depth into Semantic Segmentation via Fusion-based CNN Architecture"_, in proceedings of the 13th Asian Conference on Computer Vision, 2016. ([pdf](https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf))
