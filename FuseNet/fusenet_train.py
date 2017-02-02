@@ -72,12 +72,12 @@ def train():
     """
 
     data_files = load_datafiles()
-    images, depths, annots, classes = dataset_loader.inputs(
-                                            data_files = data_files,
-                                            image_size = FLAGS.image_size,
-                                            batch_size = FLAGS.batch_size,
-                                            num_epochs = FLAGS.num_epochs,
-                                            train = True)
+    images, depths, annots, classes, filenames = dataset_loader.inputs(
+                                                     data_files = data_files,
+                                                     image_size = FLAGS.image_size,
+                                                     batch_size = FLAGS.batch_size,
+                                                     num_epochs = FLAGS.num_epochs,
+                                                     train = True)
 
     annot_logits, class_logits = fusenet.build(images, depths, FLAGS.num_annots, FLAGS.num_classes, True)
 
