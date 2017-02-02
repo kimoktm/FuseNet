@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'Eval FuseNet on given tfrecords.')
     parser.add_argument('--tfrecords_dir', help = 'Tfrecords directory', default = '../Datasets/NYU/tfrecords')
-    parser.add_argument('--checkpoint_path', help = 'Path of checkpoint to restore', default = '../Datasets/NYU/checkpoints-0')
+    parser.add_argument('--checkpoint_path', help = 'Path of checkpoint to restore. (Ex: ../Datasets/NYU/checkpoints/fusenet.ckpt-80000)')
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
