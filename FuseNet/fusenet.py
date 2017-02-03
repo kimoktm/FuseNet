@@ -36,7 +36,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv1_1 = layers.conv_btn(depth_inputs,  [3, 3], 64, 'd_conv1_1', is_training = is_training)
     depth_conv1_2 = layers.conv_btn(depth_conv1_1, [3, 3], 64, 'd_conv1_2', is_training = is_training)
     conv1_fuse    = layers.add(color_conv1_2, depth_conv1_2, 'conv1_fuse')
-    color_pool1, color_pool1_arg = layers.maxpool_arg(conv1_fuse, [2, 2], 'pool1')
+    color_pool1   = layers.maxpool(conv1_fuse, [2, 2], 'pool1')
     depth_pool1   = layers.maxpool(depth_conv1_2, [2, 2], 'd_pool1')
 
     # Block 2
@@ -45,7 +45,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv2_1 = layers.conv_btn(depth_pool1,   [3, 3], 128, 'd_conv2_1', is_training = is_training)
     depth_conv2_2 = layers.conv_btn(depth_conv2_1, [3, 3], 128, 'd_conv2_2', is_training = is_training)
     conv2_fuse    = layers.add(color_conv2_2, depth_conv2_2, 'conv2_fuse')
-    color_pool2, color_pool2_arg = layers.maxpool_arg(conv2_fuse, [2, 2], 'pool2')
+    color_pool2   = layers.maxpool(conv2_fuse, [2, 2], 'pool2')
     depth_pool2   = layers.maxpool(depth_conv2_2, [2, 2], 'd_pool2')
 
     # Block 3
@@ -56,7 +56,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv3_2 = layers.conv_btn(depth_conv3_1, [3, 3], 256, 'd_conv3_2', is_training = is_training)
     depth_conv3_3 = layers.conv_btn(depth_conv3_2, [3, 3], 256, 'd_conv3_3', is_training = is_training)
     conv3_fuse    = layers.add(color_conv3_3, depth_conv3_3, 'conv3_fuse')
-    color_pool3, color_pool3_arg = layers.maxpool_arg(conv3_fuse, [2, 2], 'pool3')
+    color_pool3   = layers.maxpool(conv3_fuse, [2, 2], 'pool3')
     color_drop3   = layers.dropout(color_pool3, dropout_keep_prob, 'drop3')
     depth_pool3   = layers.maxpool(depth_conv3_3, [2, 2], 'd_pool3')
     depth_drop3   = layers.dropout(depth_pool3, dropout_keep_prob, 'd_drop3')
@@ -69,7 +69,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv4_2 = layers.conv_btn(depth_conv4_1, [3, 3], 512, 'd_conv4_2', is_training = is_training)
     depth_conv4_3 = layers.conv_btn(depth_conv4_2, [3, 3], 512, 'd_conv4_3', is_training = is_training)
     conv4_fuse    = layers.add(color_conv4_3, depth_conv4_3, 'conv4_fuse')
-    color_pool4, color_pool4_arg = layers.maxpool_arg(conv4_fuse, [2, 2], 'pool4')
+    color_pool4   = layers.maxpool(conv4_fuse, [2, 2], 'pool4')
     color_drop4   = layers.dropout(color_pool4, dropout_keep_prob, 'drop4')
     depth_pool4   = layers.maxpool(depth_conv4_3, [2, 2], 'd_pool4')
     depth_drop4   = layers.dropout(depth_pool4, dropout_keep_prob, 'd_drop4')
@@ -82,40 +82,40 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     depth_conv5_2 = layers.conv_btn(depth_conv5_1, [3, 3], 512, 'd_conv5_2', is_training = is_training)
     depth_conv5_3 = layers.conv_btn(depth_conv5_2, [3, 3], 512, 'd_conv5_3', is_training = is_training)
     conv5_fuse    = layers.add(color_conv5_3, depth_conv5_3, 'conv5_fuse')
-    color_pool5, color_pool5_arg = layers.maxpool_arg(conv5_fuse, [2, 2], 'pool5')
+    color_pool5   = layers.maxpool(conv5_fuse, [2, 2], 'pool5')
     color_drop5   = layers.dropout(color_pool5, dropout_keep_prob, 'drop5')
 
     # Decoder Section
     # Block 1
-    unpool5   = layers.unpool_2x2(color_drop5, color_pool5_arg)
-    deconv5_3 = layers.deconv_btn(unpool5,   [3, 3], 512, 512, 'deconv5_3', is_training = is_training)
+    upsample5 = layers.deconv_upsample(color_drop5, 2, 'upsample5')
+    deconv5_3 = layers.deconv_btn(upsample5, [3, 3], 512, 512, 'deconv5_3', is_training = is_training)
     deconv5_2 = layers.deconv_btn(deconv5_3, [3, 3], 512, 512, 'deconv5_2', is_training = is_training)
     deconv5_1 = layers.deconv_btn(deconv5_2, [3, 3], 512, 512, 'deconv5_1', is_training = is_training)
     decdrop5  = layers.dropout(deconv5_1, dropout_keep_prob, 'decdrop5')
 
     # Block 2
-    unpool4   = layers.unpool_2x2(decdrop5, color_pool4_arg)
-    deconv4_3 = layers.deconv_btn(unpool4,   [3, 3], 512, 512, 'deconv4_3', is_training = is_training)
+    upsample4 = layers.deconv_upsample(decdrop5, 2, 'upsample4')
+    deconv4_3 = layers.deconv_btn(upsample4, [3, 3], 512, 512, 'deconv4_3', is_training = is_training)
     deconv4_2 = layers.deconv_btn(deconv4_3, [3, 3], 512, 512, 'deconv4_2', is_training = is_training)
     deconv4_1 = layers.deconv_btn(deconv4_2, [3, 3], 512, 256, 'deconv4_1', is_training = is_training)
     decdrop4  = layers.dropout(deconv4_1, dropout_keep_prob, 'decdrop4')
 
     # Block 3
-    unpool3   = layers.unpool_2x2(decdrop4, color_pool3_arg)
-    deconv3_3 = layers.deconv_btn(unpool3,   [3, 3], 256, 256, 'deconv3_3', is_training = is_training)
+    upsample3 = layers.deconv_upsample(decdrop4, 2, 'upsample3')
+    deconv3_3 = layers.deconv_btn(upsample3, [3, 3], 256, 256, 'deconv3_3', is_training = is_training)
     deconv3_2 = layers.deconv_btn(deconv3_3, [3, 3], 256, 256, 'deconv3_2', is_training = is_training)
     deconv3_1 = layers.deconv_btn(deconv3_2, [3, 3], 256, 128, 'deconv3_1', is_training = is_training)
     decdrop3  = layers.dropout(deconv3_1, dropout_keep_prob, 'decdrop3')
 
     # Block 4
-    unpool2   = layers.unpool_2x2(decdrop3, color_pool2_arg)
-    deconv2_2 = layers.deconv_btn(unpool2,   [3, 3], 128, 128, 'deconv2_2', is_training = is_training)
+    upsample2 = layers.deconv_upsample(decdrop3, 2, 'upsample2')
+    deconv2_2 = layers.deconv_btn(upsample2, [3, 3], 128, 128, 'deconv2_2', is_training = is_training)
     deconv2_1 = layers.deconv_btn(deconv2_2, [3, 3], 128,  64, 'deconv2_1', is_training = is_training)
     decdrop2  = layers.dropout(deconv2_1, dropout_keep_prob, 'decdrop2')
 
     # Block 5
-    unpool1      = layers.unpool_2x2(decdrop2, color_pool1_arg)
-    deconv1_2    = layers.deconv_btn(unpool1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
+    upsample1    = layers.deconv_upsample(decdrop2, 2, 'upsample1')
+    deconv1_2    = layers.deconv_btn(upsample1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
     annot_score  = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
     annot_logits = tf.reshape(annot_score, (-1, num_annots))
 
