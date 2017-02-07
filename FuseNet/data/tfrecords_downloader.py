@@ -27,10 +27,10 @@ def download_and_extract_tfrecords(download_training_records, download_testing_r
     urls = []
 
     if download_training_records:
-        urls.append('https://transfer.sh/UYQx3/tfrecords-train-40-10.tar.gz')
+        urls.append('https://transfer.sh/gwDSU/tfrecords-train-40-10.tar.gz')
 
     if download_testing_records:
-        urls.append('https://transfer.sh/9a72G/tfrecords-test-40-10.tar.gz')
+        urls.append('https://transfer.sh/16lHPv/tfrecords-test-40-10.tar.gz')
     
     if len(urls) > 0:
         for url in urls:
