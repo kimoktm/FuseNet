@@ -178,11 +178,11 @@ def deconv_upsample(inputs, factor, name, padding = 'SAME', activation_fn = None
     with tf.variable_scope(name):
         stride_shape   = [1, factor, factor, 1]
         input_shape    = tf.shape(inputs)
-        num_filters_in = input_shape[-1]
+        num_filters_in = inputs.get_shape()[-1].value
         output_shape   = tf.pack([input_shape[0], input_shape[1] * factor, input_shape[2] * factor, num_filters_in])
 
         weights = bilinear_upsample_weights(factor, num_filters_in)
-        conv_trans = tf.nn.conv2d_transpose(inputs, weights, output_shape, stride_shape, padding = padding)
+        outputs = tf.nn.conv2d_transpose(inputs, weights, output_shape, stride_shape, padding = padding)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)
@@ -223,7 +223,7 @@ def bilinear_upsample_weights(factor, num_outputs):
         weights_kernel[:, :, i, i] = upsample_kernel
 
     init = tf.constant_initializer(value = weights_kernel, dtype = tf.float32)
-    weights = tf.get_variable('weights', weights.shape, tf.float32, init)
+    weights = tf.get_variable('weights', weights_kernel.shape, tf.float32, init)
 
     return weights
 
