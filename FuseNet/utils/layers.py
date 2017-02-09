@@ -163,6 +163,7 @@ def deconv_btn(inputs, kernel_size, num_filters_in, num_outputs, name,
 def deconv_upsample(inputs, factor, name, padding = 'SAME', activation_fn = None):
     """
     Convolution Transpose upsampling layer with bilinear interpolation weights:
+    ISSUE: problems with odd scaling factors
     ----------
     Args:
         inputs: Tensor, [batch_size, height, width, channels]
