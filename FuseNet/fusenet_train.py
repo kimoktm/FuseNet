@@ -111,12 +111,12 @@ def train():
     try:
         while not coord.should_stop():
             _, loss_value = sess.run([train_op, loss])
-            duration = time.time() - start_time
 
             step = tf.train.global_step(sess, global_step)
             if step % 1000 == 0:
                 acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
                 epoch = step * FLAGS.batch_size / data_size
+                duration = time.time() - start_time
                 start_time = time.time()
 
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
@@ -163,8 +163,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 10e-5)
-    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
-    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 10000)
+    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.98)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
