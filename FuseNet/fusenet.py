@@ -170,6 +170,7 @@ def classification_loss(logits, labels):
 
     return class_loss
 
+
 def l2_loss():
     """
     L2 loss:
@@ -180,8 +181,10 @@ def l2_loss():
     
     weights = [var for var in tf.trainable_variables() if var.name.endswith('weights:0')]
     l2_loss = tf.add_n([tf.nn.l2_loss(w) for w in weights])
+
     return l2_loss
-    
+
+
 def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
     """
     Total loss:
@@ -283,10 +286,16 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
     
     decayed_learning_rate = tf.train.exponential_decay(learning_rate, global_step, 
                             learning_rate_decay_steps, learning_rate_decay_rate, staircase = True)
-    optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
-    train_op    = optimizer.minimize(loss, global_step = global_step)
+
+    # execute update_ops to update batch_norm weights
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
+    with tf.control_dependencies(update_ops):
+        optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
+        train_op    = optimizer.minimize(loss, global_step = global_step)
 
     return train_op
+
 
 def predictions(annot_logits, batch_size, image_size):
     """
@@ -302,4 +311,6 @@ def predictions(annot_logits, batch_size, image_size):
     """
 
     predicted_images = tf.reshape(tf.argmax(annot_logits, axis=1), [batch_size, image_size, image_size])
+
     return predicted_images
+

@@ -92,17 +92,19 @@ def train():
                        tf.local_variables_initializer())
 
     saver = tf.train.Saver()
+
     session_manager = tf.train.SessionManager()
 
-    sess = session_manager.prepare_session("", init_op=init_op, saver=saver, checkpoint_dir=FLAGS.checkpoint_dir, init_fn=initialize_session)
+    sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
     coord = tf.train.Coordinator()
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
 
+    start_time = time.time()
+
     try:
         while not coord.should_stop():
-            start_time = time.time()
             _, loss_value = sess.run([train_op, loss])
             duration = time.time() - start_time
 
@@ -113,6 +115,8 @@ def train():
                 print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
                 print('\t\tTraining segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
+
+                start_time = time.time()
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
@@ -153,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
-    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
+    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 10e-5)
     parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
