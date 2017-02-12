@@ -55,7 +55,12 @@ def load_datafiles():
     tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train')
     data_files = tf.gfile.Glob(tf_record_pattern)
 
-    return data_files
+    data_size = 0
+    for fn in data_files:
+        for record in tf.python_io.tf_record_iterator(fn):
+            data_size += 1
+
+    return data_files, data_size
 
 
 def initialize_session(sess):
@@ -71,7 +76,7 @@ def train():
     Train fusenet using specified args:
     """
 
-    data_files = load_datafiles()
+    data_files, data_size = load_datafiles()
     images, depths, annots, classes, filenames = dataset_loader.inputs(
                                                      data_files = data_files,
                                                      image_size = FLAGS.image_size,
@@ -111,12 +116,12 @@ def train():
             step = tf.train.global_step(sess, global_step)
             if step % 1000 == 0:
                 acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
-                
-                print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
+                epoch = step * FLAGS.batch_size / data_size
+                start_time = time.time()
+
+                print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
-
-                start_time = time.time()
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
