@@ -55,7 +55,12 @@ def load_datafiles():
     tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'train')
     data_files = tf.gfile.Glob(tf_record_pattern)
 
-    return data_files
+    data_size = 0
+    for fn in data_files:
+        for record in tf.python_io.tf_record_iterator(fn):
+            data_size += 1
+
+    return data_files, data_size
 
 
 def initialize_session(sess):
@@ -71,7 +76,7 @@ def train():
     Train fusenet using specified args:
     """
 
-    data_files = load_datafiles()
+    data_files, data_size = load_datafiles()
     images, depths, annots, classes, filenames = dataset_loader.inputs(
                                                      data_files = data_files,
                                                      image_size = FLAGS.image_size,
@@ -92,25 +97,29 @@ def train():
                        tf.local_variables_initializer())
 
     saver = tf.train.Saver()
+
     session_manager = tf.train.SessionManager()
 
-    sess = session_manager.prepare_session("", init_op=init_op, saver=saver, checkpoint_dir=FLAGS.checkpoint_dir, init_fn=initialize_session)
+    sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
     coord = tf.train.Coordinator()
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
 
+    start_time = time.time()
+
     try:
         while not coord.should_stop():
-            start_time = time.time()
             _, loss_value = sess.run([train_op, loss])
-            duration = time.time() - start_time
 
             step = tf.train.global_step(sess, global_step)
             if step % 1000 == 0:
                 acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc])
-                
-                print('[PROGRESS]\tStep %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
+                epoch = step * FLAGS.batch_size / data_size
+                duration = time.time() - start_time
+                start_time = time.time()
+
+                print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
 
@@ -153,9 +162,9 @@ if __name__ == '__main__':
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
-    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 0.001)
-    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
-    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
+    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 10e-5)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 10000)
+    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.98)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')

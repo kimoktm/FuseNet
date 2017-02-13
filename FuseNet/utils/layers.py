@@ -76,7 +76,7 @@ def conv_btn(inputs, kernel_size, num_outputs, name,
         bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv    = tf.nn.conv2d(inputs, weights, stride_shape, padding = padding)
         outputs = tf.nn.bias_add(conv, bias)
-        outputs = tf_layers.batch_norm(outputs, is_training = is_training)
+        outputs = tf.contrib.layers.batch_norm(outputs, center = True, scale = True, is_training = is_training)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)
@@ -150,7 +150,7 @@ def deconv_btn(inputs, kernel_size, num_filters_in, num_outputs, name,
         bias    = tf.get_variable('bias', [num_outputs], tf.float32, tf.constant_initializer(0.0))
         conv_trans = tf.nn.conv2d_transpose(inputs, weights, output_shape, stride_shape, padding = padding)
         outputs    = tf.nn.bias_add(conv_trans, bias)
-        outputs    = tf_layers.batch_norm(outputs, is_training = is_training)
+        outputs    = tf.contrib.layers.batch_norm(outputs, center = True, scale = True, is_training = is_training)
 
         if activation_fn is not None:
             outputs = activation_fn(outputs)
@@ -174,7 +174,8 @@ def batch_norm(inputs, name, is_training = True, decay = 0.9997, epsilon = 0.001
         outputs: Tensor, [batch_size, height, width, channels]
     """
 
-    return tf_layers.batch_norm(inputs, name = name, decay = decay,
+    return tf.contrib.layers.batch_norm(inputs, name = name, decay = decay,
+                            center = True, scale = True,
                             is_training = is_training,
                             epsilon = epsilon, activation_fn = activation_fn)
 
@@ -192,11 +193,7 @@ def flatten(inputs, name):
     """
 
     with tf.variable_scope(name):
-        input_shape = inputs.get_shape().as_list()
-
-        dim = 1
-        for d in input_shape[1:]:
-            dim *= d
+        dim     = inputs.get_shape()[1:4].num_elements()
         outputs = tf.reshape(inputs, [-1, dim])
 
         return outputs
