@@ -112,7 +112,7 @@ def train():
 
     writer = tf.train.SummaryWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
 
-    merged = tf.merge_all_summaries()
+    merged = tf.summary.merge_all()
 
     coord = tf.train.Coordinator()
 
