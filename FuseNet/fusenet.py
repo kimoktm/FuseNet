@@ -278,7 +278,7 @@ def accuracy(annot_logits, annots, class_logits, classes):
     classification_acc = classification_accuracy(class_logits, classes)
     total_accuracy = (segmentation_acc + classification_acc) / 2
 
-    tf.summary.scalar("accuarcy/total", class_accuracy)
+    tf.summary.scalar("accuarcy/total", total_accuracy)
 
     return total_accuracy, segmentation_acc, classification_acc
         

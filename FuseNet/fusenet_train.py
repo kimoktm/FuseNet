@@ -87,10 +87,10 @@ def train():
                                                      num_epochs = FLAGS.num_epochs,
                                                      train = True)
 
-    data_image   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 3))
-    data_depth   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
-    data_annots  = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
-    data_classes = tf.placeholder(tf.int64,   shape=(None))
+    data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
+    data_depth   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
+    data_annots  = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
+    data_classes = tf.placeholder(tf.int64,   shape = (None))
 
     annot_logits, class_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, FLAGS.num_classes, True)
 
@@ -104,12 +104,12 @@ def train():
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
 
+    saver = tf.train.Saver()
+
     session_manager = tf.train.SessionManager()
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
-    saver = tf.train.Saver()
-
     writer = tf.train.SummaryWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
 
     merged = tf.summary.merge_all()
@@ -140,7 +140,7 @@ def train():
                 val_acc_total_value, val_acc_seg_value, val_acc_clss_value = sess.run([total_acc, seg_acc, class_acc], feed_dict = feed_dict_val)
 
                 if val_acc_seg_value > curr_val_acc:
-                    checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_best_validation.ckpt')
+                    checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
                     saver.save(sess, checkpoint_path, global_step = global_step)
                     curr_val_acc = val_acc_seg_value
                     improved_str = '*'
