@@ -10,7 +10,7 @@ import tensorflow as tf
 import utils.layers as layers
 
 
-def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = True):
+def build(color_inputs, depth_inputs, num_annots, is_training = True):
     """
     Build fusenet network:
     ----------
@@ -118,15 +118,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
     annot_score  = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
     annot_logits = tf.reshape(annot_score, (-1, num_annots))
 
-    # Classification
-    flattend     = layers.flatten(color_drop5, 'flatten')
-    fconnected6  = layers.fully_connected(flattend, 4096, 'fc6')
-    f6_drop      = layers.dropout(fconnected6, dropout_keep_prob, 'fc6drop')
-    fconnected7  = layers.fully_connected(f6_drop, 4096, 'fc7')
-    f7_drop      = layers.dropout(fconnected7, dropout_keep_prob, 'fc7drop')
-    class_logits = layers.fully_connected(f7_drop, num_classes, 'fc8', activation_fn = None)
-
-    return annot_logits, class_logits
+    return annot_logits
 
 
 def segmentation_loss(logits, labels):
@@ -150,26 +142,6 @@ def segmentation_loss(logits, labels):
     return segment_loss
 
 
-def classification_loss(logits, labels):
-    """
-    Classification loss:
-    ----------
-    Args:
-        logits: Tensor, predicted    [batch_size,  num_classes]
-        labels: Tensor, ground truth [batch_size, 1]
-
-    Returns:
-        class_loss: Classification loss
-    """
-
-    labels = tf.to_int64(labels)
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-                        labels = labels, logits = logits, name = 'class_cross_entropy_per_example')
-    class_loss = tf.reduce_mean(cross_entropy, name = 'class_cross_entropy')
-
-    return class_loss
-
-
 def l2_loss():
     """
     L2 loss:
@@ -184,24 +156,21 @@ def l2_loss():
     return l2_loss
 
 
-def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
+def loss(annot_logits, annots, weight_decay_factor):
     """
     Total loss:
     ----------
     Args:
         annot_logits: Tensor, predicted    [batch_size * height * width,  num_annots]
         annots: Tensor, ground truth [batch_size, height, width, 1]
-        class_logits: Tensor, predicted    [batch_size,  num_classes]
-        classes: Tensor, ground truth [batch_size, 1]
         weight_decay_factor: float, factor with which weights are decayed
 
     Returns:
-        total_loss: Segmentation + Classification losses + WeightDecayFactor * L2 loss
+        total_loss: Segmentation + WeightDecayFactor * L2 loss
     """
 
     segment_loss = segmentation_loss(annot_logits, annots)
-    class_loss   = classification_loss(class_logits, classes)
-    total_loss   = segment_loss + class_loss + weight_decay_factor * l2_loss()
+    total_loss   = segment_loss + weight_decay_factor * l2_loss()
 
     return total_loss
 
@@ -227,46 +196,19 @@ def segmentation_accuracy(logits, labels):
     return segmentation_accuracy
 
 
-def classification_accuracy(logits, labels):
-    """
-    Classification accuracy:
-    ----------
-    Args:
-        logits: Tensor, predicted    [batch_size,  num_classes]
-        labels: Tensor, ground truth [batch_size, 1]
-
-    Returns:
-        class_accuracy: Classification accuracy
-    """
-    
-    predicted_classes = tf.argmax(logits, axis=1)
-    correct_predictions = tf.equal(predicted_classes, labels)
-    class_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
-
-    return class_accuracy 
-
-    
-def accuracy(annot_logits, annots, class_logits, classes):
+def accuracy(annot_logits, annots):
     """
     Accuracy:
     --------
     Args:
         annot_logits: Tensor, predicted    [batch_size * height * width,  num_annots]
         annots: Tensor, ground truth [batch_size, height, width, 1]
-        class_logits: Tensor, predicted    [batch_size,  num_classes]
-        classes: Tensor, ground truth [batch_size, 1]
     
     Returns:
-        total_accuracy: Segmentation + Classification accuracies
         segmentation_acc: Segmentation accuracy
-        classification_acc: Classification accuracy
     """
-    
-    segmentation_acc = segmentation_accuracy(annot_logits, annots)
-    classification_acc = classification_accuracy(class_logits, classes)
-    total_accuracy = (segmentation_acc + classification_acc)/2
 
-    return total_accuracy, segmentation_acc, classification_acc
+    return segmentation_accuracy(annot_logits, annots)
         
 
 def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_rate, global_step):

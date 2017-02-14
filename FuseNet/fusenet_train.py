@@ -72,7 +72,7 @@ def train():
     """
 
     data_files, data_size = load_datafiles('training')
-    images, depths, annots, classes, filenames = dataset_loader.inputs(
+    images, depths, annots, _, _ = dataset_loader.inputs(
                                                      data_files = data_files,
                                                      image_size = FLAGS.image_size,
                                                      batch_size = FLAGS.batch_size,
@@ -80,7 +80,7 @@ def train():
                                                      train = True)
 
     validation_files, validation_size = load_datafiles('validation')
-    val_images, val_depths, val_annots, val_classes, _ = dataset_loader.inputs(
+    val_images, val_depths, val_annots, _, _ = dataset_loader.inputs(
                                                      data_files = validation_files,
                                                      image_size = FLAGS.image_size,
                                                      batch_size = validation_size,
@@ -90,13 +90,12 @@ def train():
     data_image   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 3))
     data_depth   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
     data_annots  = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
-    data_classes = tf.placeholder(tf.int64,   shape=(None))
 
-    annot_logits, class_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, FLAGS.num_classes, True)
+    annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, True)
 
-    total_acc, seg_acc, class_acc = fusenet.accuracy(annot_logits, data_annots, class_logits, data_classes)
+    seg_acc = fusenet.accuracy(annot_logits, data_annots)
 
-    loss = fusenet.loss(annot_logits, data_annots, class_logits, data_classes, FLAGS.weight_decay_rate)
+    loss = fusenet.loss(annot_logits, data_annots, FLAGS.weight_decay_rate)
 
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate, global_step)
@@ -120,17 +119,18 @@ def train():
 
     try:
         while not coord.should_stop():
-            image_batch, depth_batch, annots_batch, classes_batch = sess.run([images, depths, annots, classes])
-            feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch, data_classes : classes_batch}
+            image_batch, depth_batch, annots_batch = sess.run([images, depths, annots])
+            feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch}
+
             _, loss_value   = sess.run([train_op, loss], feed_dict = feed_dict_train)
-
             step = tf.train.global_step(sess, global_step)
-            if step % 1000 == 0:
-                image_val, depth_val, annots_val, classes_val = sess.run([val_images, val_depths, val_annots, val_classes])
-                feed_dict_val   = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_classes : classes_val}
 
-                acc_total_value, acc_seg_value, acc_clss_value = sess.run([total_acc, seg_acc, class_acc], feed_dict = feed_dict_train)
-                val_acc_total_value, val_acc_seg_value, val_acc_clss_value = sess.run([total_acc, seg_acc, class_acc], feed_dict = feed_dict_val)
+            if step % 1000 == 0:
+                image_val, depth_val, annots_val = sess.run([val_images, val_depths, val_annots])
+                feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val}
+
+                acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_train)
+                val_acc_total_value, val_acc_seg_value, val_acc_clss_value = sess.run(seg_acc, feed_dict = feed_dict_val)
 
                 if val_acc_seg_value > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_best_validation.ckpt')
@@ -145,10 +145,8 @@ def train():
                 start_time = time.time()
 
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
-                print('\t\tTraining   segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
-                     % (acc_seg_value, acc_clss_value, acc_total_value))
-                print('\t\tValidation segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f %s\n'
-                     % (val_acc_seg_value, val_acc_clss_value, val_acc_total_value, improved_str))
+                print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
+                print('\t\tValidation segmentation accuracy = %.2f %s\n' % (val_acc_seg_value, improved_str))
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')

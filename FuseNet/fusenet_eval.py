@@ -79,7 +79,7 @@ def evaluate():
     """
 
     data_files, data_size = load_datafiles('testing')
-    images, depths, annots, classes, filenames = dataset_loader.inputs(
+    images, depths, annots, _, filenames = dataset_loader.inputs(
                                                      data_files = data_files,
                                                      image_size = FLAGS.image_size,
                                                      batch_size = FLAGS.batch_size,
@@ -90,7 +90,7 @@ def evaluate():
 
     predicted_images = fusenet.predictions(annot_logits, FLAGS.batch_size, FLAGS.image_size)
     
-    total_acc, seg_acc , class_acc = fusenet.accuracy(annot_logits, annots, class_logits, classes)
+    seg_acc = fusenet.accuracy(annot_logits, annots)
     
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
