@@ -104,12 +104,16 @@ def train():
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
 
-    saver = tf.train.Saver()
-
     session_manager = tf.train.SessionManager()
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
+    saver = tf.train.Saver()
+
+    writer = tf.train.SummaryWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
+
+    merged = tf.merge_all_summaries()
+
     coord = tf.train.Coordinator()
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
@@ -120,11 +124,14 @@ def train():
 
     try:
         while not coord.should_stop():
+            step = tf.train.global_step(sess, global_step)
+
             image_batch, depth_batch, annots_batch, classes_batch = sess.run([images, depths, annots, classes])
             feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch, data_classes : classes_batch}
-            _, loss_value   = sess.run([train_op, loss], feed_dict = feed_dict_train)
+            
+            _, loss_value, summary = sess.run([train_op, loss, merged], feed_dict = feed_dict_train)
+            writer.add_summary(summary, step)
 
-            step = tf.train.global_step(sess, global_step)
             if step % 1000 == 0:
                 image_val, depth_val, annots_val, classes_val = sess.run([val_images, val_depths, val_annots, val_classes])
                 feed_dict_val   = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_classes : classes_val}
@@ -164,6 +171,7 @@ def train():
 
     # Wait for threads to finish.
     coord.join(threads)
+    writer.close()
     sess.close()
 
 

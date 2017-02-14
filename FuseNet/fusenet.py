@@ -147,6 +147,8 @@ def segmentation_loss(logits, labels):
                         labels = labels, logits = logits, name = 'segment_cross_entropy_per_example')
     segment_loss  = tf.reduce_mean(cross_entropy, name = 'segment_cross_entropy')
 
+    tf.scalar_summary("loss/segmentation", segment_loss)
+
     return segment_loss
 
 
@@ -167,6 +169,8 @@ def classification_loss(logits, labels):
                         labels = labels, logits = logits, name = 'class_cross_entropy_per_example')
     class_loss = tf.reduce_mean(cross_entropy, name = 'class_cross_entropy')
 
+    tf.scalar_summary("loss/classification", class_loss)
+
     return class_loss
 
 
@@ -180,6 +184,8 @@ def l2_loss():
     
     weights = [var for var in tf.trainable_variables() if var.name.endswith('weights:0')]
     l2_loss = tf.add_n([tf.nn.l2_loss(w) for w in weights])
+
+    tf.scalar_summary("loss/weights", l2_loss)
 
     return l2_loss
 
@@ -203,6 +209,8 @@ def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
     class_loss   = classification_loss(class_logits, classes)
     total_loss   = segment_loss + class_loss + weight_decay_factor * l2_loss()
 
+    tf.scalar_summary("loss/total", total_loss)
+
     return total_loss
 
 
@@ -224,6 +232,8 @@ def segmentation_accuracy(logits, labels):
     correct_predictions = tf.equal(predicted_annots, labels)
     segmentation_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
+    tf.scalar_summary("accuarcy/segmentation", segmentation_accuracy)
+
     return segmentation_accuracy
 
 
@@ -242,6 +252,8 @@ def classification_accuracy(logits, labels):
     predicted_classes = tf.argmax(logits, axis=1)
     correct_predictions = tf.equal(predicted_classes, labels)
     class_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
+
+    tf.scalar_summary("accuarcy/classification", class_accuracy)
 
     return class_accuracy 
 
@@ -264,7 +276,9 @@ def accuracy(annot_logits, annots, class_logits, classes):
     
     segmentation_acc = segmentation_accuracy(annot_logits, annots)
     classification_acc = classification_accuracy(class_logits, classes)
-    total_accuracy = (segmentation_acc + classification_acc)/2
+    total_accuracy = (segmentation_acc + classification_acc) / 2
+
+    tf.scalar_summary("accuarcy/total", class_accuracy)
 
     return total_accuracy, segmentation_acc, classification_acc
         
@@ -292,6 +306,8 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
     with tf.control_dependencies(update_ops):
         optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
         train_op    = optimizer.minimize(loss, global_step = global_step)
+
+    tf.scalar_summary("learning_rate", decayed_learning_rate)
 
     return train_op
 
