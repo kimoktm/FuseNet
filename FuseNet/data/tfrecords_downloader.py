@@ -11,7 +11,7 @@ import wget
 import tarfile
 
 
-def download_and_extract_tfrecords(download_training_records, download_testing_records, output_dir):
+def download_and_extract_tfrecords(download_training_records, download_validation_records, download_testing_records, output_dir):
     """
     Downloads and extracts tfrecords
     ----------
@@ -27,11 +27,14 @@ def download_and_extract_tfrecords(download_training_records, download_testing_r
     urls = []
 
     if download_training_records:
-        urls.append('https://transfer.sh/gwDSU/tfrecords-train-40-10.tar.gz')
+        urls.append('https://transfer.sh/14UkNO/training.tar.gz')
+
+    if download_validation_records:
+        urls.append('https://transfer.sh/85IHc/validation.tar.gz')
 
     if download_testing_records:
-        urls.append('https://transfer.sh/16lHPv/tfrecords-test-40-10.tar.gz')
-    
+        urls.append('https://transfer.sh/m45kl/testing.tar.gz')
+
     if len(urls) > 0:
         for url in urls:
             filepath = os.path.join(output_dir, 'tmp')

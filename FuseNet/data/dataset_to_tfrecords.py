@@ -61,7 +61,7 @@ def convert_to_example(filename, image_buffer, depth_buffer, annot_buffer,
     example = tf.train.Example(features=tf.train.Features(feature={
             'image/height': int64_feature(height),
             'image/width': int64_feature(width),
-            'image/filename': bytes_feature(tf.compat.as_bytes(os.path.basename(filename))),
+            'image/filename': bytes_feature(tf.compat.as_bytes(os.path.basename(os.path.normpath(filename)))),
             'image/format': bytes_feature(tf.compat.as_bytes(image_format)),
             'image/class': int64_feature(clss),
             'image/encoded/color': bytes_feature(tf.compat.as_bytes(image_buffer)),
@@ -298,34 +298,26 @@ def process_dataset(name, directory, num_shards, classes_file):
 
 def main(_):
 
-    assert not FLAGS.train_shards % FLAGS.num_threads, (
-            '[ERROR   ]\tPlease make the FLAGS.num_threads commensurate with FLAGS.train_shards')
-
-    assert not FLAGS.test_shards % FLAGS.num_threads, (
-            '[ERROR   ]\tPlease make the FLAGS.num_threads commensurate with '
-            'FLAGS.test_shards')
+    assert not FLAGS.num_shards % FLAGS.num_threads, (
+            '[ERROR   ]\tPlease make the FLAGS.num_threads commensurate with FLAGS.num_shards')
 
     print('[INFO    ]\tSaving results to %s' % FLAGS.output_dir)
 
     if not tf.gfile.Exists(FLAGS.output_dir):
         tf.gfile.MakeDirs(FLAGS.output_dir)
 
-    process_dataset('train', FLAGS.train_dir,
-                                     FLAGS.train_shards, FLAGS.classes_file)
-    process_dataset('test', FLAGS.test_dir,
-                                     FLAGS.test_shards, FLAGS.classes_file)
+    process_dataset(os.path.basename(os.path.normpath(FLAGS.data_dir)), FLAGS.data_dir,
+                                     FLAGS.num_shards, FLAGS.classes_file)
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'Converts image data to TFRecords file format')
-    parser.add_argument('--train_dir', help = 'Training data directory', required = True)
-    parser.add_argument('--test_dir', help = 'Testing data directory', required = True)
+    parser.add_argument('--data_dir', help = 'Data directory', required = True)
     parser.add_argument('--output_dir', help = 'Output data directory', required = False)
     parser.add_argument('--classes_file', help = 'classes file', required = True)
     parser.add_argument('--num_threads', help = 'Number of threads', type = int, default = 1)
-    parser.add_argument('--train_shards', help = 'Number of shards in training TFRecord files', type = int, default = 1)
-    parser.add_argument('--test_shards', help = 'Number of shards in test TFRecord files', type = int, default = 1)
+    parser.add_argument('--num_shards', help = 'Number of shards in training TFRecord files', type = int, default = 1)
     parser.add_argument('--name_color', help = 'Color images name format', default = '_color')
     parser.add_argument('--name_depth', help = 'Depth image name format', default = '_depth')
     parser.add_argument('--name_annot', help = 'annotation images name format', default = '_annot')

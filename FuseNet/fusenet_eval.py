@@ -32,22 +32,28 @@ def maybe_download_and_extract():
     if not tf.gfile.Exists(FLAGS.tfrecords_dir):
         tf.gfile.MakeDirs(FLAGS.tfrecords_dir)
 
-    testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test'))
+    testing_tfrecords = glob.glob(os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'testing'))
 
     if not testing_tfrecords:
-        print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' %FLAGS.tfrecords_dir)
-        tfrecords_downloader.download_and_extract_tfrecords(False, True, FLAGS.tfrecords_dir)
+        print('[INFO    ]\tNo test tfrecords found. Downloading them in %s' % FLAGS.tfrecords_dir)
+        tfrecords_downloader.download_and_extract_tfrecords(False, False, True, FLAGS.tfrecords_dir)
 
 
-def load_datafiles():
+def load_datafiles(type):
     """
     Get all tfrecords from tfrecords dir:
     """
 
-    tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % 'test')
+    tf_record_pattern = os.path.join(FLAGS.tfrecords_dir, '%s-*' % type)
     data_files = tf.gfile.Glob(tf_record_pattern)
 
-    return data_files
+    data_size = 0
+    for fn in data_files:
+        for record in tf.python_io.tf_record_iterator(fn):
+            data_size += 1
+
+    return data_files, data_size
+
 
 def maybe_save_images(images, filenames):
     """
@@ -72,7 +78,7 @@ def evaluate():
     Eval fusenet using specified args:
     """
 
-    data_files = load_datafiles()
+    data_files, data_size = load_datafiles('testing')
     images, depths, annots, classes, filenames = dataset_loader.inputs(
                                                      data_files = data_files,
                                                      image_size = FLAGS.image_size,

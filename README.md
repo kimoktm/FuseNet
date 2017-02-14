@@ -2,7 +2,7 @@
 Code for reproducing main results in the paper [FuseNet: FuseNet: incorporating depth into semantic segmentation via fusion-based CNN architecture](https://vision.in.tum.de/_media/spezial/bib/hazirbasma2016fusenet.pdf) in addition to segmentation a classification loss for scene (kitchen, office,..) is also added to test its effect on the overall segmentation quality.
 
 
-<img src="Images/framework.png" width="800px" height="386px"/>
+<img src="Images/framework.png" width="800px"/>
 
 ### Dependencies
 Due to the fact that tensorflow doesn't have unpooling layer a work around is done using
@@ -23,22 +23,22 @@ maxpool with args which only works on GPU.
     nyuv2_10_class_mapping.mat       maps to 10 classes (scenes), 0 is invalid
     annotations_names.txt            mapped annotations names (indexed according to mapping)
     class_names.txt                  mapped classes (scenes) names (indexed according to mapping)
-    splits.mat                       standard train-test split
+    nyuv2_three_splits.mat           train, validation & test split
     ```
 
 2. Preprocess raw dataset and save results to `Datasets/NYU` using
 
     ```
-    python data/nyu_dataset_extract.py -i nyu_dataset.mat -s splits.mat -a annot_mapping.mat -c class_mapping.mat -cn class_names.txt -o Datasets/NYU
+    python data/nyu_dataset_extract.py -i nyu_dataset.mat -s nyuv2_three_splits.mat -a annot_mapping.mat -c class_mapping.mat -cn class_names.txt -o Datasets/NYU
     ```
 
-3. Convert extracted dataset to tfrecords `Datasets/NYU/tfrecords` using
+3. Convert each extracted dataset (train, validation & test) to tfrecords `Datasets/NYU/tfrecords` using
 
    ```
-  python data/dataset_to_tfrecords.py --train_dir NYU/train --test_dir NYU/test --output_dir NYU/tfrecords --classes_file class_names.txt
+  python data/dataset_to_tfrecords.py --data_dir NYU/train --output_dir NYU/tfrecords --classes_file class_names.txt
   ```
 
-4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/gwDSU/tfrecords-train-40-10.tar.gz), [testing](https://transfer.sh/16lHPv/tfrecords-test-40-10.tar.gz). Also when running fusenet_train.py it automatically downloads training and test data if not found. When running fusenet_eval.py it automatically downloads test data if not found.
+4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/14UkNO/training.tar.gz), [validation](https://transfer.sh/85IHc/validation.tar.gz), [testing](https://transfer.sh/m45kl/testing.tar.gz'). Also when running fusenet_train.py it automatically downloads training and validation data if not found. When running fusenet_eval.py it automatically downloads test data if not found.
 
 Note: There is a problem with `00222_depth.png` that it is flipped horizontally. Make sure to flip it back before building the tfRecords. The file is fixed in the uploaded tfRecords.
 
