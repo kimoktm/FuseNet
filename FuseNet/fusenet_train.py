@@ -136,7 +136,7 @@ def train():
                 feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val}
 
                 acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_train)
-                val_acc_total_value, val_acc_seg_value, val_acc_clss_value = sess.run(seg_acc, feed_dict = feed_dict_val)
+                val_acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_val)
 
                 if val_acc_seg_value > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
@@ -195,12 +195,12 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 10e-5)
-    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 50000)
-    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.98)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 20000)
+    parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
-    parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
+    parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 8)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
-    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 5000)
+    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 3000)
 
     FLAGS, unparsed = parser.parse_known_args()
 
