@@ -139,6 +139,8 @@ def segmentation_loss(logits, labels):
                         labels = labels, logits = logits, name = 'segment_cross_entropy_per_example')
     segment_loss  = tf.reduce_mean(cross_entropy, name = 'segment_cross_entropy')
 
+    tf.summary.scalar("loss/segmentation", segment_loss)
+
     return segment_loss
 
 
@@ -152,6 +154,8 @@ def l2_loss():
     
     weights = [var for var in tf.trainable_variables() if var.name.endswith('weights:0')]
     l2_loss = tf.add_n([tf.nn.l2_loss(w) for w in weights])
+
+    tf.summary.scalar("loss/weights", l2_loss)
 
     return l2_loss
 
@@ -171,6 +175,8 @@ def loss(annot_logits, annots, weight_decay_factor):
 
     segment_loss = segmentation_loss(annot_logits, annots)
     total_loss   = segment_loss + weight_decay_factor * l2_loss()
+
+    tf.summary.scalar("loss/total", total_loss)
 
     return total_loss
 
@@ -193,9 +199,11 @@ def segmentation_accuracy(logits, labels):
     correct_predictions = tf.equal(predicted_annots, labels)
     segmentation_accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32))
 
+    tf.summary.scalar("accuarcy/segmentation", segmentation_accuracy)
+
     return segmentation_accuracy
 
-
+ 
 def accuracy(annot_logits, annots):
     """
     Accuracy:
@@ -234,6 +242,8 @@ def train(loss, learning_rate, learning_rate_decay_steps, learning_rate_decay_ra
     with tf.control_dependencies(update_ops):
         optimizer   = tf.train.AdamOptimizer(decayed_learning_rate)
         train_op    = optimizer.minimize(loss, global_step = global_step)
+
+    tf.summary.scalar("learning_rate", decayed_learning_rate)
 
     return train_op
 

@@ -87,9 +87,9 @@ def train():
                                                      num_epochs = FLAGS.num_epochs,
                                                      train = True)
 
-    data_image   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 3))
-    data_depth   = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
-    data_annots  = tf.placeholder(tf.float32, shape=(None, FLAGS.image_size, FLAGS.image_size, 1))
+    data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
+    data_depth   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
+    data_annots  = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
 
     annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, True)
 
@@ -109,6 +109,10 @@ def train():
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
+    writer = tf.train.SummaryWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
+
+    merged = tf.summary.merge_all()
+
     coord = tf.train.Coordinator()
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
@@ -119,11 +123,13 @@ def train():
 
     try:
         while not coord.should_stop():
+            step = tf.train.global_step(sess, global_step)
+
             image_batch, depth_batch, annots_batch = sess.run([images, depths, annots])
             feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch}
-
-            _, loss_value   = sess.run([train_op, loss], feed_dict = feed_dict_train)
-            step = tf.train.global_step(sess, global_step)
+            
+            _, loss_value, summary = sess.run([train_op, loss, merged], feed_dict = feed_dict_train)
+            writer.add_summary(summary, step)
 
             if step % 1000 == 0:
                 image_val, depth_val, annots_val = sess.run([val_images, val_depths, val_annots])
@@ -133,7 +139,7 @@ def train():
                 val_acc_total_value, val_acc_seg_value, val_acc_clss_value = sess.run(seg_acc, feed_dict = feed_dict_val)
 
                 if val_acc_seg_value > curr_val_acc:
-                    checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_best_validation.ckpt')
+                    checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
                     saver.save(sess, checkpoint_path, global_step = global_step)
                     curr_val_acc = val_acc_seg_value
                     improved_str = '*'
@@ -162,6 +168,7 @@ def train():
 
     # Wait for threads to finish.
     coord.join(threads)
+    writer.close()
     sess.close()
 
 
