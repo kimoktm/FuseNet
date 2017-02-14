@@ -110,7 +110,7 @@ def train():
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
-    writer = tf.train.SummaryWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
+    writer = tf.summary.FileWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
 
     merged = tf.summary.merge_all()
 
