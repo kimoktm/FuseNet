@@ -88,7 +88,9 @@ def process_image(i, class_id, color, depth, annot):
     idx = int(i) + 1
     print("[PROGRESS]\timage", idx, "/", len(images))
 
-    if idx in train_images:
+    if idx in val_images:
+        data_type = "validation"
+    elif idx in train_images:
         data_type = "training"
     else:
         assert idx in test_images, (
@@ -118,11 +120,6 @@ def process_image(i, class_id, color, depth, annot):
     annot_image = annot_image.crop(crop_box)
     annot_image.save(filename + "_annot.png")
 
-    rel_path   = "%s/%s/%05d" % (data_type, classes_names[mapped_class], i)
-
-    return [ idx in train_images, [rel_path + "_color.png", 
-            rel_path +"_depth.png", rel_path + "_annot.png", mapped_class]]
-
 
 if __name__ == "__main__":
 
@@ -142,8 +139,9 @@ if __name__ == "__main__":
     dataset      = h5py.File(args.input_data, "r")
     split_map    = scipy.io.loadmat(args.split_map)
     output_dir   = args.output_dir
-    test_images  = set([int(x) for x in split_map["testNdxs"]])
     train_images = set([int(x) for x in split_map["trainNdxs"]])
+    test_images  = set([int(x) for x in split_map["testNdxs"]])
+    val_images   = set([int(x) for x in split_map["valNdxs"]]) if "valNdxs" in split_map else [];
 
     images = dataset['images']
     depths = dataset['depths']
@@ -179,35 +177,17 @@ if __name__ == "__main__":
 
     # Process and save images using either
     # single or multiple threads
-    data_paths = []
-
     if int(args.threads) == 1:
         print("[INFO    ]\tSingle-threaded mode")
         for i, image in enumerate(images):
-            data_paths.append(process_image(i, classes_ids[i], image.T, depths[i, :, :].T, annots[i, :, :].T))
+            process_image(i, classes_ids[i], image.T, depths[i, :, :].T, annots[i, :, :].T)
     else:
         print("[INFO    ]\tMulti-threaded mode")
-        data_paths = Parallel(args.threads)(delayed(process_image)(i, classes_ids[i], images[i, :, :].T, depths[i, :, :].T, annots[i, :, :].T) for i in range(len(images)))
+        Parallel(args.threads)(delayed(process_image)(i, classes_ids[i], images[i, :, :].T, depths[i, :, :].T, annots[i, :, :].T) for i in range(len(images)))
 
-
-    # Split data paths into training and testing
-    # sets so each can be saved in a sperate file
-    train_data = []
-    test_data  = []
-
-    for d in data_paths:
-        if d[0] == True:
-            train_data.append(d[1])
-        else:
-            test_data.append(d[1])
-
-    # Save train & test data files using this format:
-    # [color_img_path, depth_img_path, annot_img_depth, class_id]
-    np.savetxt("%s/train_data.txt" % output_dir, train_data, "%s")
-    np.savetxt("%s/test_data.txt" % output_dir, test_data, "%s")
-    
     print("[INFO    ]\tData Statistics:")
     print("\t\t%d\t: Training images" % len(train_images))
     print("\t\t%d\t: Testing images" % len(test_images))
+    print("\t\t%d\t: Validation images" % len(val_images))
     print("\t\t%d\t: Classes" % len(class_map))
     print("\t\t%d\t: Annotations" % len(annots_map))

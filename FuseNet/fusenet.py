@@ -20,7 +20,6 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
         num_annots: Integer, number of segmentation (annotation) labels
         num_classes: Integer, number of classification labels
         is_training: Boolean, in training mode or not (for dropout & bn)
-
     Returns:
         annot_logits: Tensor, predicted annotated image flattened 
                               [batch_size * height * width,  num_annots]
@@ -310,7 +309,7 @@ def predictions(annot_logits, batch_size, image_size):
         predicted_images: Tensor, predicted images   [batch_size, image_size, image_size]
     """
 
-    predicted_images = tf.reshape(tf.argmax(annot_logits, axis=1), [batch_size, image_size, image_size])
+    predicted_images = tf.reshape(tf.argmax(annot_logits, axis = 1), [batch_size, image_size, image_size])
 
     return predicted_images
 
