@@ -86,7 +86,7 @@ def evaluate():
                                                      num_epochs = 1,
                                                      train = False)
 
-    annot_logits, class_logits = fusenet.build(images, depths, FLAGS.num_annots, FLAGS.num_classes, False)
+    annot_logits = fusenet.build(images, depths, FLAGS.num_annots, False)
 
     predicted_images = fusenet.predictions(annot_logits, FLAGS.batch_size, FLAGS.image_size)
     
