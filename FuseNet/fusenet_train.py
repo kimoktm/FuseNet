@@ -95,11 +95,16 @@ def train():
 
     annot_logits, class_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, FLAGS.num_classes, data_train)
 
-    total_acc, seg_acc, class_acc = fusenet.accuracy(annot_logits, data_annots, class_logits, data_classes)
+    mask = tf.equal(data_annots, 0)
+    data_annots_without_class_zero = tf.boolean_mask(data_annots, mask)
+    mask = tf.reshape(mask, [-1])
+    annot_logits_without_class_zero = tf.boolean_mask(annot_logits, mask)
+    
+    total_acc, seg_acc, class_acc = fusenet.accuracy(annot_logits_without_class_zero, data_annots_without_class_zero, class_logits, data_classes)
 
-    loss = fusenet.loss(annot_logits, data_annots, class_logits, data_classes, FLAGS.weight_decay_rate)
+    loss = fusenet.loss(annot_logits_without_class_zero, data_annots_without_class_zero, class_logits, data_classes, FLAGS.weight_decay_rate)
 
-    true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits, data_annots)
+    true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, data_annots_without_class_zero)
     
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate, global_step)
@@ -156,15 +161,13 @@ def train():
                 start_time = time.time()
 
                 tp_val, fp_val, tn_val, fn_val = sess.run([true_positives, false_positives, true_negatives, false_negatives], feed_dict = feed_dict_val)
-                global_accuracy, classwise_accuracy, intersection_over_union = segmentation_accuracies(tp_val, fp_val, tn_val, fn_val)
+                val_global_accuracy, val_classwise_accuracy, val_intersection_over_union = segmentation_accuracies(tp_val, fp_val, tn_val, fn_val)
                 
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining   segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
-                print('\t\tValidation segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f %s\n'
-                     % (val_acc_seg_value, val_acc_clss_value, val_acc_total_value, improved_str))
-                print('\t\tGlobal accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f\n'
-                      % (global_accuracy, classwise_accuracy, intersection_over_union))
+                print('\t\tValidation global accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f, classifcation accuracy = %.2f, total accuracy = %.2f %s\n'
+                     % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union ,val_acc_clss_value, val_acc_total_value, improved_str))
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
@@ -199,11 +202,12 @@ def segmentation_accuracies(true_positives, false_positives, true_negatives, fal
         classwise_accuracy:      1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives) ]
         intersection_over_union: 1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives + class_false_negatives) ]
     """
-    
-    total_pixel_count = (np.sum(true_positives) + np.sum(false_positives) + np.sum(true_negatives) + np.sum(false_negatives)) * 1.0 / FLAGS.num_annots
+
+    classes = true_positives.shape[0]
+    total_pixel_count = (np.sum(true_positives) + np.sum(false_positives) + np.sum(true_negatives) + np.sum(false_negatives)) * 1.0 / classes
     global_accuracy = np.sum(true_positives) / total_pixel_count
-    classwise_accuracy = np.sum(1.0 * true_positives / (true_positives + false_positives))/FLAGS.num_annots
-    intersection_over_union = np.sum(1.0 * true_positives / (true_positives + false_positives + false_negatives)) / FLAGS.num_annots
+    classwise_accuracy = np.sum(1.0 * true_positives / (true_positives + false_positives))/classes
+    intersection_over_union = np.sum(1.0 * true_positives / (true_positives + false_positives + false_negatives)) / classes
 
     return global_accuracy, classwise_accuracy, intersection_over_union
     
