@@ -38,7 +38,7 @@ maxpool with args which only works on GPU.
   python data/dataset_to_tfrecords.py --data_dir NYU/train --output_dir NYU/tfrecords --classes_file class_names.txt
   ```
 
-4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/14UkNO/training.tar.gz), [validation](https://transfer.sh/85IHc/validation.tar.gz), [testing](https://transfer.sh/m45kl/testing.tar.gz'). Also when running fusenet_train.py it automatically downloads training and validation data if not found. When running fusenet_eval.py it automatically downloads test data if not found.
+4. Or simply download processed data with 40 annotations and 10 classes here: [training](https://transfer.sh/OxWV2/nyu-training-40.tar.gz), [validation](https://transfer.sh/I6ywR/nyu-validation-40.tar.gz), [testing](https://transfer.sh/ycmcX/nyu-testing-40.tar.gz'). Also when running fusenet_train.py it automatically downloads training and validation data if not found. When running fusenet_eval.py it automatically downloads test data if not found.
 
 Note: There is a problem with `00222_depth.png` that it is flipped horizontally. Make sure to flip it back before building the tfRecords. The file is fixed in the uploaded tfRecords.
 
