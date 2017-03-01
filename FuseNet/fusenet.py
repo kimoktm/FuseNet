@@ -10,7 +10,7 @@ import tensorflow as tf
 import utils.layers as layers
 
 
-def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = True):
+def build(color_inputs, depth_inputs, num_annots, num_classes, is_training):
     """
     Build fusenet network:
     ----------
@@ -26,7 +26,7 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training = Tru
         class_logits: Tensor, predicted classes [batch_size , num_classes]
     """
 
-    dropout_keep_prob = 0.5 if is_training else 1.0
+    dropout_keep_prob = tf.select(is_training, 0.5, 1.0)
 
     # Encoder Section
     # Block 1

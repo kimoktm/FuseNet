@@ -27,13 +27,13 @@ def download_and_extract_tfrecords(download_training_records, download_validatio
     urls = []
 
     if download_training_records:
-        urls.append('https://transfer.sh/14UkNO/training.tar.gz')
+        urls.append('https://transfer.sh/OxWV2/nyu-training-40.tar.gz')
 
     if download_validation_records:
-        urls.append('https://transfer.sh/85IHc/validation.tar.gz')
+        urls.append('https://transfer.sh/I6ywR/nyu-validation-40.tar.gz')
 
     if download_testing_records:
-        urls.append('https://transfer.sh/m45kl/testing.tar.gz')
+        urls.append('https://transfer.sh/ycmcX/nyu-testing-40.tar.gz')
 
     if len(urls) > 0:
         for url in urls:
