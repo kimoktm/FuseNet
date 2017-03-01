@@ -10,7 +10,7 @@ import tensorflow as tf
 import utils.layers as layers
 
 
-def build(color_inputs, depth_inputs, num_annots, is_training = True):
+def build(color_inputs, depth_inputs, num_annots, is_training):
     """
     Build fusenet network:
     ----------
@@ -18,15 +18,13 @@ def build(color_inputs, depth_inputs, num_annots, is_training = True):
         color_inputs: Tensor, [batch_size, height, width, 3]
         depth_inputs: Tensor, [batch_size, height, width, 1]
         num_annots: Integer, number of segmentation (annotation) labels
-        num_classes: Integer, number of classification labels
         is_training: Boolean, in training mode or not (for dropout & bn)
     Returns:
         annot_logits: Tensor, predicted annotated image flattened 
                               [batch_size * height * width,  num_annots]
-        class_logits: Tensor, predicted classes [batch_size , num_classes]
     """
 
-    dropout_keep_prob = 0.5 if is_training else 1.0
+    dropout_keep_prob = tf.select(is_training, 0.5, 1.0)
 
     # Encoder Section
     # Block 1

@@ -90,8 +90,9 @@ def train():
     data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
     data_depth   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
     data_annots  = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
+    data_train   = tf.placeholder(tf.bool)
 
-    annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, True)
+    annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, data_train)
 
     seg_acc = fusenet.accuracy(annot_logits, data_annots)
 
@@ -126,14 +127,15 @@ def train():
             step = tf.train.global_step(sess, global_step)
 
             image_batch, depth_batch, annots_batch = sess.run([images, depths, annots])
-            feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch}
+            feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch, data_train : True}
             
             _, loss_value, summary = sess.run([train_op, loss, merged], feed_dict = feed_dict_train)
             writer.add_summary(summary, step)
 
             if step % 1000 == 0:
                 image_val, depth_val, annots_val = sess.run([val_images, val_depths, val_annots])
-                feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val}
+                feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch, data_train : False}
+                feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_train : False}
 
                 acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_train)
                 val_acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_val)
@@ -152,7 +154,7 @@ def train():
 
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
-                print('\t\tValidation segmentation accuracy = %.2f %s\n' % (val_acc_seg_value, improved_str))
+                print('\t\tValidation segmentation accuracy = %.2f %s, best = %.2f\n' % (val_acc_seg_value, improved_str, curr_val_acc))
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
@@ -194,13 +196,13 @@ if __name__ == '__main__':
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
-    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 10e-5)
-    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 20000)
+    parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 1e-4)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 10000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 8)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
-    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 3000)
+    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
 
     FLAGS, unparsed = parser.parse_known_args()
 

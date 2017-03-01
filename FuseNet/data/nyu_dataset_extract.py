@@ -33,8 +33,6 @@ def map_annots(annot):
     """
 
     annot = np.array(annot, dtype = np.int16)
-    annot -= 1
-    annot[annot < 0] = 0
     mappedannots = annots_map[annot]
 
     return mappedannots
