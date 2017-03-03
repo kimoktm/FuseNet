@@ -94,14 +94,20 @@ def train():
 
     annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, data_train)
 
-    mask = tf.equal(data_annots, 0)
+    mask = tf.not_equal(data_annots, 0)
     data_annots_without_class_zero = tf.boolean_mask(data_annots, mask)
     mask = tf.reshape(mask, [-1])
     annot_logits_without_class_zero = tf.boolean_mask(annot_logits, mask)
     
     seg_acc = fusenet.accuracy(annot_logits_without_class_zero, data_annots_without_class_zero)
 
-    loss = fusenet.loss(annot_logits_without_class_zero, data_annots_without_class_zero, FLAGS.weight_decay_rate)
+    #convert ground truth to one hot tensor, or only zero entries if the pixel ground truth is "0"
+    labels = tf.reshape(data_annots, [-1])
+    labels = tf.cast(labels, tf.int32)
+    labels = tf.where(tf.equal(labels, 0), tf.fill(tf.shape(labels), -1), labels)
+    one_hot_labels = tf.one_hot(labels, depth=FLAGS.num_annots)
+
+    loss = fusenet.loss(annot_logits, one_hot_labels, FLAGS.weight_decay_rate)
 
     true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, data_annots_without_class_zero)
 
