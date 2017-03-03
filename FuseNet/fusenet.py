@@ -87,34 +87,39 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training):
     # Decoder Section
     # Block 1
     upsample5 = layers.deconv_upsample(color_drop5, 2, 'upsample5')
-    deconv5_3 = layers.deconv_btn(upsample5, [3, 3], 512, 512, 'deconv5_3', is_training = is_training)
+    upsample5 = tf.concat(3, [upsample5, conv5_fuse])
+    deconv5_3 = layers.deconv_btn(upsample5, [3, 3], 512 + 512, 512, 'deconv5_3', is_training = is_training)
     deconv5_2 = layers.deconv_btn(deconv5_3, [3, 3], 512, 512, 'deconv5_2', is_training = is_training)
     deconv5_1 = layers.deconv_btn(deconv5_2, [3, 3], 512, 512, 'deconv5_1', is_training = is_training)
     decdrop5  = layers.dropout(deconv5_1, dropout_keep_prob, 'decdrop5')
 
     # Block 2
     upsample4 = layers.deconv_upsample(decdrop5, 2, 'upsample4')
-    deconv4_3 = layers.deconv_btn(upsample4, [3, 3], 512, 512, 'deconv4_3', is_training = is_training)
+    upsample4 = tf.concat(3, [upsample4, conv4_fuse])
+    deconv4_3 = layers.deconv_btn(upsample4, [3, 3], 512 + 512, 512, 'deconv4_3', is_training = is_training)
     deconv4_2 = layers.deconv_btn(deconv4_3, [3, 3], 512, 512, 'deconv4_2', is_training = is_training)
     deconv4_1 = layers.deconv_btn(deconv4_2, [3, 3], 512, 256, 'deconv4_1', is_training = is_training)
     decdrop4  = layers.dropout(deconv4_1, dropout_keep_prob, 'decdrop4')
 
     # Block 3
     upsample3 = layers.deconv_upsample(decdrop4, 2, 'upsample3')
-    deconv3_3 = layers.deconv_btn(upsample3, [3, 3], 256, 256, 'deconv3_3', is_training = is_training)
+    upsample3 = tf.concat(3, [upsample3, conv3_fuse])
+    deconv3_3 = layers.deconv_btn(upsample3, [3, 3], 256 + 256, 256, 'deconv3_3', is_training = is_training)
     deconv3_2 = layers.deconv_btn(deconv3_3, [3, 3], 256, 256, 'deconv3_2', is_training = is_training)
     deconv3_1 = layers.deconv_btn(deconv3_2, [3, 3], 256, 128, 'deconv3_1', is_training = is_training)
     decdrop3  = layers.dropout(deconv3_1, dropout_keep_prob, 'decdrop3')
 
     # Block 4
     upsample2 = layers.deconv_upsample(decdrop3, 2, 'upsample2')
-    deconv2_2 = layers.deconv_btn(upsample2, [3, 3], 128, 128, 'deconv2_2', is_training = is_training)
+    upsample2 = tf.concat(3, [upsample2, conv2_fuse])
+    deconv2_2 = layers.deconv_btn(upsample2, [3, 3], 128 + 128, 128, 'deconv2_2', is_training = is_training)
     deconv2_1 = layers.deconv_btn(deconv2_2, [3, 3], 128,  64, 'deconv2_1', is_training = is_training)
     decdrop2  = layers.dropout(deconv2_1, dropout_keep_prob, 'decdrop2')
 
     # Block 5
     upsample1    = layers.deconv_upsample(decdrop2, 2, 'upsample1')
-    deconv1_2    = layers.deconv_btn(upsample1, [3, 3], 64, 64, 'deconv1_2', is_training = is_training)
+    upsample1    = tf.concat(3, [upsample1, conv1_fuse])
+    deconv1_2    = layers.deconv_btn(upsample1, [3, 3], 64 + 64, 64, 'deconv1_2', is_training = is_training)
     annot_score  = layers.conv(deconv1_2, [3, 3], num_annots, 'score')
     annot_logits = tf.reshape(annot_score, (-1, num_annots))
 
