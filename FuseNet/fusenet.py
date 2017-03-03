@@ -135,15 +135,13 @@ def segmentation_loss(logits, labels):
     ----------
     Args:
         logits: Tensor, predicted    [batch_size * height * width,  num_annots]
-        labels: Tensor, ground truth [batch_size, height, width, 1]
+        labels: Tensor, ground truth [batch_size * height * width, num_annots]
 
     Returns:
         segment_loss: Segmentation loss
     """
 
-    labels = tf.reshape(labels, [-1])
-    labels = tf.to_int64(labels)
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                         labels = labels, logits = logits, name = 'segment_cross_entropy_per_example')
     segment_loss  = tf.reduce_mean(cross_entropy, name = 'segment_cross_entropy')
 
