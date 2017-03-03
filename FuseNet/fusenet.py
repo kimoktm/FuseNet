@@ -206,7 +206,40 @@ def segmentation_accuracy(logits, labels):
 
     return segmentation_accuracy
 
- 
+
+def segmentation_metrics(logits, labels):
+    """
+    Segmentation metrics:
+    ----------
+    Args:
+        logits: Tensor, predicted    [batch_size * height * width,  num_annots]
+        labels: Tensor, ground truth [batch_size, height, width, 1]
+
+    Returns:
+        true positives, false positives, true negatives, false negatives
+    """
+
+    num_annots = logits.get_shape()[1]
+    labels = tf.reshape(labels, [-1])
+    labels = tf.cast(labels, tf.int64)
+    labels = tf.one_hot(labels, depth=num_annots)
+
+    predicted_annots = tf.argmax(logits, axis=1)
+    predicted_annots = tf.one_hot(predicted_annots, depth=num_annots)
+
+    true_positives = tf.logical_and(tf.equal(labels, 1), tf.equal(predicted_annots, 1))
+    false_positives = tf.logical_and(tf.equal(labels, 0), tf.equal(predicted_annots, 1))
+    true_negatives = tf.logical_and(tf.equal(labels, 0), tf.equal(predicted_annots, 0))
+    false_negatives = tf.logical_and(tf.equal(labels, 1), tf.equal(predicted_annots, 0))
+    
+    true_positives_count = tf.reduce_sum(tf.cast(true_positives, tf.int64), axis=0)
+    false_positives_count = tf.reduce_sum(tf.cast(false_positives, tf.int64), axis=0)
+    true_negatives_count = tf.reduce_sum(tf.cast(true_negatives, tf.int64), axis=0)
+    false_negatives_count = tf.reduce_sum(tf.cast(false_negatives, tf.int64), axis=0)
+    
+    return true_positives_count, false_positives_count, true_negatives_count, false_negatives_count
+
+    
 def accuracy(annot_logits, annots):
     """
     Accuracy:

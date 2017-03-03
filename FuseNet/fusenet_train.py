@@ -94,9 +94,16 @@ def train():
 
     annot_logits = fusenet.build(data_image, data_depth, FLAGS.num_annots, data_train)
 
-    seg_acc = fusenet.accuracy(annot_logits, data_annots)
+    mask = tf.equal(data_annots, 0)
+    data_annots_without_class_zero = tf.boolean_mask(data_annots, mask)
+    mask = tf.reshape(mask, [-1])
+    annot_logits_without_class_zero = tf.boolean_mask(annot_logits, mask)
+    
+    seg_acc = fusenet.accuracy(annot_logits_without_class_zero, data_annots_without_class_zero)
 
-    loss = fusenet.loss(annot_logits, data_annots, FLAGS.weight_decay_rate)
+    loss = fusenet.loss(annot_logits_without_class_zero, data_annots_without_class_zero, FLAGS.weight_decay_rate)
+
+    true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, data_annots_without_class_zero)
 
     global_step = tf.Variable(0, name = 'global_step', trainable = False)
     train_op = fusenet.train(loss, FLAGS.learning_rate, FLAGS.learning_rate_decay_steps, FLAGS.learning_rate_decay_rate, global_step)
@@ -138,12 +145,15 @@ def train():
                 feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_train : False}
 
                 acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_train)
-                val_acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_val)
+                # val_acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_val)
 
-                if val_acc_seg_value > curr_val_acc:
+                tp_val, fp_val, tn_val, fn_val = sess.run([true_positives, false_positives, true_negatives, false_negatives], feed_dict = feed_dict_val)
+                val_global_accuracy, val_classwise_accuracy, val_intersection_over_union = segmentation_accuracies(tp_val, fp_val, tn_val, fn_val)
+
+                if val_global_accuracy > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
                     saver.save(sess, checkpoint_path, global_step = global_step)
-                    curr_val_acc = val_acc_seg_value
+                    curr_val_acc = val_global_accuracy
                     improved_str = '*'
                 else:
                     improved_str = ''
@@ -151,10 +161,11 @@ def train():
                 epoch = step * FLAGS.batch_size / data_size
                 duration = time.time() - start_time
                 start_time = time.time()
-
+                
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
-                print('\t\tValidation segmentation accuracy = %.2f %s, best = %.2f\n' % (val_acc_seg_value, improved_str, curr_val_acc))
+                print('\t\tValidation global accuracy = %.2f classwise accuracy = %.2f, intersection_over_union = %.2f %s, best = %.2f\n'
+                 % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union, improved_str, curr_val_acc))
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
@@ -172,6 +183,31 @@ def train():
     coord.join(threads)
     writer.close()
     sess.close()
+
+
+def segmentation_accuracies(true_positives, false_positives, true_negatives, false_negatives):
+    """
+    Segmentation accuracies:
+    ----------
+    Args:
+        true_positives:  Tensor [num_annots]
+        false_positives: Tensor [num_annots]
+        true_negatives:  Tensor [num_annots]
+        false_negatives: Tensor [num_annots]
+
+    Returns:
+        global_accuracy:         true_positives / pixel_count
+        classwise_accuracy:      1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives) ]
+        intersection_over_union: 1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives + class_false_negatives) ]
+    """
+
+    classes = true_positives.shape[0]
+    total_pixel_count = (np.sum(true_positives) + np.sum(false_positives) + np.sum(true_negatives) + np.sum(false_negatives)) * 1.0 / classes
+    global_accuracy = np.sum(true_positives) / total_pixel_count
+    classwise_accuracy = np.sum(1.0 * true_positives / (true_positives + false_positives))/classes
+    intersection_over_union = np.sum(1.0 * true_positives / (true_positives + false_positives + false_negatives)) / classes
+
+    return global_accuracy, classwise_accuracy, intersection_over_union
 
 
 def main(_):
