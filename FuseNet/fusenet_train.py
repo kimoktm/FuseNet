@@ -172,8 +172,8 @@ def train():
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining   segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
                      % (acc_seg_value, acc_clss_value, acc_total_value))
-                print('\t\tValidation global accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f, classifcation accuracy = %.2f, total accuracy = %.2f %s\n'
-                     % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union ,val_acc_clss_value, val_acc_total_value, improved_str))
+                print('\t\tValidation global accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f, classifcation accuracy = %.2f, total accuracy = %.2f %s, best = %.2f\n'
+                     % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union ,val_acc_clss_value, val_acc_total_value, improved_str, curr_val_acc))
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
