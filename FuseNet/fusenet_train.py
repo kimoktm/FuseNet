@@ -165,7 +165,7 @@ def train():
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
                 print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
 
-            if epoch % 15 == 0:
+            if step % 2000 == 0:
                 val_global_accuracy = 0
                 val_classwise_accuracy = 0
                 val_intersection_over_union = 0
