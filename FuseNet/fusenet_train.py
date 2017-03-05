@@ -183,6 +183,9 @@ def train():
                 print('\t\tValidation global accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f, classifcation accuracy = %.2f, total accuracy = %.2f %s, best = %.2f\n'
                      % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union ,val_acc_clss_value, val_acc_total_value, improved_str, curr_val_acc))
 
+                class_weighting_val = sess.run(classification_weighting)
+                print('\t\tCurrent classification weighting = %.5f' % class_weighting_val)
+                
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
                 checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet.ckpt')
