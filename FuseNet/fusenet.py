@@ -134,13 +134,14 @@ def build(color_inputs, depth_inputs, num_annots, num_classes, is_training):
     return annot_logits, class_logits
 
 
-def segmentation_loss(logits, labels):
+def segmentation_loss(logits, labels, class_weights = None):
     """
     Segmentation loss:
     ----------
     Args:
         logits: Tensor, predicted    [batch_size * height * width,  num_annots]
         labels: Tensor, ground truth [batch_size * height * width, num_annots]
+        class_weights: Tensor, weighting of class for loss [num_annots, 1] or None
 
     Returns:
         segment_loss: Segmentation loss
@@ -148,6 +149,12 @@ def segmentation_loss(logits, labels):
 
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                         labels = labels, logits = logits, name = 'segment_cross_entropy_per_example')
+
+    if class_weights is not None:
+        weights = tf.matmul(labels, class_weights, a_is_sparse=True)
+        weights = tf.reshape(weights, [-1])
+        cross_entropy = cross_entropy * weights
+
     segment_loss  = tf.reduce_mean(cross_entropy, name = 'segment_cross_entropy')
 
     tf.summary.scalar("loss/segmentation", segment_loss)
@@ -193,7 +200,7 @@ def l2_loss():
     return l2_loss
 
 
-def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
+def loss(annot_logits, annots, class_logits, classes, weight_decay_factor, class_weights = None):
     """
     Total loss:
     ----------
@@ -203,12 +210,13 @@ def loss(annot_logits, annots, class_logits, classes, weight_decay_factor):
         class_logits: Tensor, predicted    [batch_size,  num_classes]
         classes: Tensor, ground truth [batch_size, 1]
         weight_decay_factor: float, factor with which weights are decayed
+        class_weights: Tensor, weighting of class for loss [num_annots, 1] or None
 
     Returns:
         total_loss: Segmentation + Classification losses + WeightDecayFactor * L2 loss
     """
 
-    segment_loss = segmentation_loss(annot_logits, annots)
+    segment_loss = segmentation_loss(annot_logits, annots, class_weights)
     class_loss   = classification_loss(class_logits, classes)
     total_loss   = segment_loss + class_loss + weight_decay_factor * l2_loss()
 
