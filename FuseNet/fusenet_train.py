@@ -83,9 +83,9 @@ def train():
     val_images, val_depths, val_annots, _, _ = dataset_loader.inputs(
                                                      data_files = validation_files,
                                                      image_size = FLAGS.image_size,
-                                                     batch_size = validation_size,
+                                                     batch_size = FLAGS.batch_size,
                                                      num_epochs = FLAGS.num_epochs,
-                                                     train = True)
+                                                     train = False)
 
     data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
     data_depth   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 1))
@@ -98,7 +98,7 @@ def train():
     data_annots_without_class_zero = tf.boolean_mask(data_annots, mask)
     mask = tf.reshape(mask, [-1])
     annot_logits_without_class_zero = tf.boolean_mask(annot_logits, mask)
-    
+
     seg_acc = fusenet.accuracy(annot_logits_without_class_zero, data_annots_without_class_zero)
 
     #convert ground truth to one hot tensor, or only zero entries if the pixel ground truth is "0"
@@ -129,7 +129,7 @@ def train():
     session_manager = tf.train.SessionManager(local_init_op=tf.local_variables_initializer())
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
-    
+
     writer = tf.summary.FileWriter(FLAGS.checkpoint_dir + "/train_logs", sess.graph)
 
     merged = tf.summary.merge_all()
@@ -153,15 +153,36 @@ def train():
             writer.add_summary(summary, step)
 
             if step % 1000 == 0:
-                image_val, depth_val, annots_val = sess.run([val_images, val_depths, val_annots])
                 feed_dict_train = {data_image : image_batch, data_depth : depth_batch, data_annots : annots_batch, data_train : False}
-                feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_train : False}
 
                 acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_train)
                 # val_acc_seg_value = sess.run(seg_acc, feed_dict = feed_dict_val)
 
-                tp_val, fp_val, tn_val, fn_val = sess.run([true_positives, false_positives, true_negatives, false_negatives], feed_dict = feed_dict_val)
-                val_global_accuracy, val_classwise_accuracy, val_intersection_over_union = segmentation_accuracies(tp_val, fp_val, tn_val, fn_val)
+                epoch = step * FLAGS.batch_size / data_size
+                duration = time.time() - start_time
+                start_time = time.time()
+                
+                print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
+                print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
+
+            if epoch % 15 == 0:
+                val_global_accuracy = 0
+                val_classwise_accuracy = 0
+                val_intersection_over_union = 0
+
+                for x in range(1, validation_size / FLAGS.batch_size):
+                    image_val, depth_val, annots_val = sess.run([val_images, val_depths, val_annots])
+                    feed_dict_val = {data_image : image_val, data_depth : depth_val, data_annots : annots_val, data_train : False}
+
+                    tp_val, fp_val, tn_val, fn_val = sess.run([true_positives, false_positives, true_negatives, false_negatives], feed_dict = feed_dict_val)
+                    val_accuracy, val_class_accuracy, val_union = segmentation_accuracies(tp_val, fp_val, tn_val, fn_val)
+                    val_global_accuracy += val_accuracy
+                    val_classwise_accuracy += val_class_accuracy
+                    val_intersection_over_union += val_union
+
+                val_global_accuracy /= (validation_size / FLAGS.batch_size)
+                val_classwise_accuracy /= (validation_size / FLAGS.batch_size)
+                val_intersection_over_union /= (validation_size / FLAGS.batch_size)
 
                 if val_global_accuracy > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
@@ -171,14 +192,9 @@ def train():
                 else:
                     improved_str = ''
 
-                epoch = step * FLAGS.batch_size / data_size
-                duration = time.time() - start_time
-                start_time = time.time()
-                
-                print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
-                print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
                 print('\t\tValidation global accuracy = %.2f classwise accuracy = %.2f, intersection_over_union = %.2f %s, best = %.2f\n'
                  % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union, improved_str, curr_val_acc))
+
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
