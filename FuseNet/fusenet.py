@@ -200,7 +200,7 @@ def l2_loss():
     return l2_loss
 
 
-def loss(annot_logits, annots, class_logits, classes, weight_decay_factor, class_weights = None):
+def loss(annot_logits, annots, class_logits, classes, classification_weighting, weight_decay_factor, class_weights = None):
     """
     Total loss:
     ----------
@@ -209,6 +209,7 @@ def loss(annot_logits, annots, class_logits, classes, weight_decay_factor, class
         annots: Tensor, ground truth [batch_size, height, width, 1]
         class_logits: Tensor, predicted    [batch_size,  num_classes]
         classes: Tensor, ground truth [batch_size, 1]
+        classification_weighting: Tensor, weighting for classification loss [1]
         weight_decay_factor: float, factor with which weights are decayed
         class_weights: Tensor, weighting of class for loss [num_annots, 1] or None
 
@@ -218,7 +219,7 @@ def loss(annot_logits, annots, class_logits, classes, weight_decay_factor, class
 
     segment_loss = segmentation_loss(annot_logits, annots, class_weights)
     class_loss   = classification_loss(class_logits, classes)
-    total_loss   = segment_loss + class_loss + weight_decay_factor * l2_loss()
+    total_loss   = segment_loss + classification_weighting * class_loss + weight_decay_factor * l2_loss() + weight_decay_factor * 1/classification_weighting
 
     tf.summary.scalar("loss/total", total_loss)
 

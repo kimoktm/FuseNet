@@ -115,7 +115,8 @@ def train():
     else:
         class_weight_tensor = None
 
-    loss = fusenet.loss(annot_logits, one_hot_labels, class_logits, data_classes, FLAGS.weight_decay_rate, class_weight_tensor)
+    classification_weighting = tf.Variable(0.5)
+    loss = fusenet.loss(annot_logits, one_hot_labels, class_logits, data_classes, classification_weighting, FLAGS.weight_decay_rate, class_weight_tensor)
 
     true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, data_annots_without_class_zero)
     
