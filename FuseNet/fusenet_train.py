@@ -186,7 +186,7 @@ def train():
                 val_classwise_accuracy /= (validation_size / FLAGS.batch_size)
                 val_intersection_over_union /= (validation_size / FLAGS.batch_size)
 
-                if val_acc_seg_value > curr_val_acc:
+                if val_global_accuracy > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
                     saver.save(sess, checkpoint_path, global_step = global_step)
                     curr_val_acc = val_global_accuracy
