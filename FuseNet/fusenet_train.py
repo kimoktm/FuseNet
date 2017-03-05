@@ -127,7 +127,7 @@ def train():
 
     saver = tf.train.Saver()
 
-    session_manager = tf.train.SessionManager()
+    session_manager = tf.train.SessionManager(local_init_op=tf.local_variables_initializer())
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
