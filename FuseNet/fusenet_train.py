@@ -240,19 +240,19 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'Train FuseNet on given tfrecords directory.\
                                     Automatically download and process data to tfrecords if dir not found.')
-    parser.add_argument('--tfrecords_dir', help = 'Tfrecords directory', default = '../Datasets/NYU/tfrecords')
-    parser.add_argument('--checkpoint_dir', help = 'Checkpoints directory', default = '../Datasets/NYU/checkpoints/')
-    parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
-    parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
+    parser.add_argument('--tfrecords_dir', help = 'Tfrecords directory', default = '../Datasets/SUNRGBD/tfrecords')
+    parser.add_argument('--checkpoint_dir', help = 'Checkpoints directory', default = '../Datasets/SUNRGBD/checkpoints/')
+    parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 38)
+    parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 46)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
     parser.add_argument('--learning_rate', help = 'Learning rate', type = float, default = 1e-4)
-    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 10000)
+    parser.add_argument('--learning_rate_decay_steps', help = 'Learning rate decay steps', type = int, default = 40000)
     parser.add_argument('--learning_rate_decay_rate', help = 'Learning rate decay rate', type = float, default = 0.9)
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 8)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
     parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
-    parser.add_argument('--class_weights', help = 'Weight per class for weighted loss. .npy file that contains single array [num_annots]')
+    parser.add_argument('--class_weights', help = 'Weight per class for weighted loss. .npy file that contains single array [num_annots]', default = '../Datasets/SUNRGBD/sunrgbd_class_weights.npy')
     
     FLAGS, unparsed = parser.parse_known_args()
 
