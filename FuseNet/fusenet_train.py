@@ -223,8 +223,8 @@ def segmentation_accuracies(true_positives, false_positives, true_negatives, fal
     classes = true_positives.shape[0]
     total_pixel_count = (np.sum(true_positives) + np.sum(false_positives) + np.sum(true_negatives) + np.sum(false_negatives)) * 1.0 / classes
     global_accuracy = np.sum(true_positives) / total_pixel_count
-    classwise_accuracy = np.sum(1.0 * true_positives / (true_positives + false_positives))/classes
-    intersection_over_union = np.sum(1.0 * true_positives / (true_positives + false_positives + false_negatives)) / classes
+    classwise_accuracy = np.sum(np.nan_to_num(1.0 * true_positives / (true_positives + false_positives))) / (classes-1)
+    intersection_over_union = np.sum(np.nan_to_num(1.0 * true_positives / (true_positives + false_positives + false_negatives))) / (classes-1)
 
     return global_accuracy, classwise_accuracy, intersection_over_union
     
