@@ -88,9 +88,16 @@ def evaluate():
 
     annot_logits, class_logits = fusenet.build(images, depths, FLAGS.num_annots, FLAGS.num_classes, False)
 
+    mask = tf.not_equal(annots, 0)
+    annots_without_class_zero = tf.boolean_mask(annots, mask)
+    mask = tf.reshape(mask, [-1])
+    annot_logits_without_class_zero = tf.boolean_mask(annot_logits, mask)
+    
     predicted_images = fusenet.predictions(annot_logits, FLAGS.batch_size, FLAGS.image_size)
     
-    total_acc, seg_acc , class_acc = fusenet.accuracy(annot_logits, annots, class_logits, classes)
+    total_acc, seg_acc , class_acc = fusenet.accuracy(annot_logits_without_class_zero, annots_without_class_zero, class_logits, classes)
+
+    true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, annots_without_class_zero)
     
     init_op = tf.group(tf.global_variables_initializer(),
                        tf.local_variables_initializer())
@@ -111,12 +118,30 @@ def evaluate():
 
     threads = tf.train.start_queue_runners(sess = sess, coord = coord)
 
+    total_true_positives = np.zeros([FLAGS.num_annots], dtype=np.int64)
+    total_false_positives = np.zeros([FLAGS.num_annots], dtype=np.int64)
+    total_true_negatives = np.zeros([FLAGS.num_annots], dtype=np.int64)
+    total_false_negatives = np.zeros([FLAGS.num_annots], dtype=np.int64)
+    
+    total_classification_acc = 0.0
+
+    step = 0
+    
     try:
-        step = 0
+    
         while not coord.should_stop():
-            acc_value, predicted_images_value, filenames_value = sess.run([seg_acc, predicted_images, filenames])
+            seg_acc_value, class_acc_value ,predicted_images_value, filenames_value, tp_val, fp_val, tn_val, fn_val = sess.run([seg_acc, class_acc, predicted_images, filenames, true_positives, false_positives, true_negatives, false_negatives])
+
+            total_classification_acc += class_acc_value
+
+            total_true_positives += tp_val
+            total_false_positives += fp_val
+            total_true_negatives += tn_val
+            total_false_negatives += fn_val
+
+                       
             maybe_save_images(predicted_images_value, filenames_value)
-            print('[PROGRESS]\tSegmentation accuracy for current batch: %.3f' % acc_value)
+            print('[PROGRESS]\tSegmentation accuracy for current batch: %.5f, classification accuracy: %.5f' % (seg_acc_value, class_acc_value))
             step += 1
 
     except tf.errors.OutOfRangeError:
@@ -126,10 +151,41 @@ def evaluate():
         # When done, ask the threads to stop.
         coord.request_stop()
 
+    combined_classification_acc = total_classification_acc/step
+    global_accuracy, classwise_accuracy, intersection_over_union = segmentation_accuracies(total_true_positives, total_false_positives, total_true_negatives, total_false_negatives)
+    
+    print('[RESULT  ]\tGlobal accuracy = %.5f, classwise accuracy = %.5f, intersection over union = %.5f, classification accuracy = %.5f'
+          % (global_accuracy, classwise_accuracy, intersection_over_union, combined_classification_acc))
+    
     # Wait for threads to finish.
     coord.join(threads)
     sess.close()
     
+
+
+def segmentation_accuracies(true_positives, false_positives, true_negatives, false_negatives):
+    """
+    Segmentation accuracies:
+    ----------
+    Args:
+        true_positives:  Tensor [num_annots]
+        false_positives: Tensor [num_annots]
+        true_negatives:  Tensor [num_annots]
+        false_negatives: Tensor [num_annots]
+
+    Returns:
+        global_accuracy:         true_positives / pixel_count
+        classwise_accuracy:      1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives) ]
+        intersection_over_union: 1/class_count * SUM(over all classes) [ class_true_positives / (class_true_positives + class_false_positives + class_false_negatives) ]
+    """
+
+    classes = true_positives.shape[0]
+    total_pixel_count = (np.sum(true_positives) + np.sum(false_positives) + np.sum(true_negatives) + np.sum(false_negatives)) * 1.0 / classes
+    global_accuracy = np.sum(true_positives) / total_pixel_count
+    classwise_accuracy = np.sum(np.nan_to_num(1.0 * true_positives / (true_positives + false_positives)))/ (classes - 1)
+    intersection_over_union = np.sum(np.nan_to_num(1.0 * true_positives / (true_positives + false_positives + false_negatives))) / (classes-1)
+
+    return global_accuracy, classwise_accuracy, intersection_over_union
 
 def main(_):
     """
@@ -153,7 +209,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_annots', help = 'Number of segmentation labels', type = int, default = 41)
     parser.add_argument('--num_classes', help = 'Number of Classification labels', type = int, default = 11)
     parser.add_argument('--image_size', help = 'Target image size (resize)', type = int, default = 224)
-    parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 4)
+    parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 2)
     parser.add_argument('--visualize', help = 'Visualize predicted annotations', type = bool, default = False)
     parser.add_argument('--output_dir', help = 'Output directory for the prediction files. If this is not set then predictions will not be saved')
     
