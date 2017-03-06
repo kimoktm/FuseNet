@@ -122,26 +122,21 @@ def evaluate():
     total_false_positives = np.zeros([FLAGS.num_annots], dtype=np.int64)
     total_true_negatives = np.zeros([FLAGS.num_annots], dtype=np.int64)
     total_false_negatives = np.zeros([FLAGS.num_annots], dtype=np.int64)
-    
-    total_classification_acc = 0.0
 
     step = 0
     
     try:
     
         while not coord.should_stop():
-            seg_acc_value, class_acc_value ,predicted_images_value, filenames_value, tp_val, fp_val, tn_val, fn_val = sess.run([seg_acc, class_acc, predicted_images, filenames, true_positives, false_positives, true_negatives, false_negatives])
-
-            total_classification_acc += class_acc_value
+            seg_acc_value ,predicted_images_value, filenames_value, tp_val, fp_val, tn_val, fn_val = sess.run([seg_acc, predicted_images, filenames, true_positives, false_positives, true_negatives, false_negatives])
 
             total_true_positives += tp_val
             total_false_positives += fp_val
             total_true_negatives += tn_val
             total_false_negatives += fn_val
-
-                       
+          
             maybe_save_images(predicted_images_value, filenames_value)
-            print('[PROGRESS]\tSegmentation accuracy for current batch: %.5f, classification accuracy: %.5f' % (seg_acc_value, class_acc_value))
+            print('[PROGRESS]\tSegmentation accuracy for current batch: %.5f' % (seg_acc_value))
             step += 1
 
     except tf.errors.OutOfRangeError:
@@ -151,11 +146,10 @@ def evaluate():
         # When done, ask the threads to stop.
         coord.request_stop()
 
-    combined_classification_acc = total_classification_acc/step
     global_accuracy, classwise_accuracy, intersection_over_union = segmentation_accuracies(total_true_positives, total_false_positives, total_true_negatives, total_false_negatives)
     
-    print('[RESULT  ]\tGlobal accuracy = %.5f, classwise accuracy = %.5f, intersection over union = %.5f, classification accuracy = %.5f'
-          % (global_accuracy, classwise_accuracy, intersection_over_union, combined_classification_acc))
+    print('[RESULT  ]\tGlobal accuracy = %.5f, classwise accuracy = %.5f, intersection over union = %.5f'
+          % (global_accuracy, classwise_accuracy, intersection_over_union))
     
     # Wait for threads to finish.
     coord.join(threads)
