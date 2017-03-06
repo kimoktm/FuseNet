@@ -107,7 +107,18 @@ def train():
     labels = tf.where(tf.equal(labels, 0), tf.fill(tf.shape(labels), -1), labels)
     one_hot_labels = tf.one_hot(labels, depth=FLAGS.num_annots)
 
+<<<<<<< HEAD
     loss = fusenet.loss(annot_logits, one_hot_labels, FLAGS.weight_decay_rate)
+=======
+    #load class weights if available
+    if FLAGS.class_weights is not None:
+        weights = np.load(FLAGS.class_weights)
+        class_weight_tensor = tf.constant(weights, dtype=tf.float32, shape=[FLAGS.num_annots, 1])
+    else:
+        class_weight_tensor = None
+
+    loss = fusenet.loss(annot_logits, one_hot_labels, class_logits, data_classes, FLAGS.weight_decay_rate, class_weight_tensor)
+>>>>>>> master
 
     true_positives, false_positives, true_negatives, false_negatives = fusenet.segmentation_metrics(annot_logits_without_class_zero, data_annots_without_class_zero)
 
@@ -119,7 +130,7 @@ def train():
 
     saver = tf.train.Saver()
 
-    session_manager = tf.train.SessionManager()
+    session_manager = tf.train.SessionManager(local_init_op=tf.local_variables_initializer())
 
     sess = session_manager.prepare_session("", init_op = init_op, saver = saver, checkpoint_dir = FLAGS.checkpoint_dir, init_fn = initialize_session)
     
@@ -169,9 +180,16 @@ def train():
                 start_time = time.time()
                 
                 print('[PROGRESS]\tEpoch %d, Step %d: loss = %.2f (%.3f sec)' % (epoch, step, loss_value, duration))
+<<<<<<< HEAD
                 print('\t\tTraining   segmentation accuracy = %.2f' % (acc_seg_value))
                 print('\t\tValidation global accuracy = %.2f classwise accuracy = %.2f, intersection_over_union = %.2f %s, best = %.2f\n'
                  % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union, improved_str, curr_val_acc))
+=======
+                print('\t\tTraining   segmentation accuracy = %.2f, classifcation accuracy = %.2f, total accuracy = %.2f'
+                     % (acc_seg_value, acc_clss_value, acc_total_value))
+                print('\t\tValidation global accuracy = %.5f, classwise accuracy = %.5f, intersection_over_union = %.5f, classifcation accuracy = %.2f, total accuracy = %.2f %s, best = %.2f\n'
+                     % (val_global_accuracy, val_classwise_accuracy, val_intersection_over_union ,val_acc_clss_value, val_acc_total_value, improved_str, curr_val_acc))
+>>>>>>> master
 
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
@@ -245,7 +263,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 8)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
     parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
-
+    parser.add_argument('--class_weights', help = 'Weight per class for weighted loss. .npy file that contains single array [num_annots]')
+    
     FLAGS, unparsed = parser.parse_known_args()
 
     tf.app.run()

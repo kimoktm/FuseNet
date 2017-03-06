@@ -17,6 +17,9 @@ maxpool with args which only works on GPU.
     - `wget`
 
 ### Data
+
+#### NYU
+
 1. Download NYUv2 RGB-D dataset [here](http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html). This dataset contains 1449 paired RGB-D images. To map the original labels into 40 classes, we use the mapping by Gupta et al from this [paper](https://people.eecs.berkeley.edu/~sgupta/pdf/GuptaArbelaezMalikCVPR13.pdf). For your convenience, we put the data split and label mapping in the subfolders `Raw/`.
     ```
     nyuv2_40_annots_mapping.mat      maps to 40 annotations, 0 is invalid
@@ -42,6 +45,11 @@ maxpool with args which only works on GPU.
 
 Note: There is a problem with `00222_depth.png` that it is flipped horizontally. Make sure to flip it back before building the tfRecords. The file is fixed in the uploaded tfRecords.
 
+#### SUNRGBD
+
+1. Download tfrecords: [training](https://dl.dropboxusercontent.com/u/2075592/training-00000-of-00001.tfrecords), [validation](https://dl.dropboxusercontent.com/u/2075592/validation-00000-of-00001.tfrecords).
+
+2. Download class weight file [here](https://dl.dropboxusercontent.com/u/2075592/sunrgbd_class_weights.npy).
 
 ### Training
 - To train Fusenet run `fusenet_train` passing tfrecords dir
