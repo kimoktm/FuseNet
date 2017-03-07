@@ -84,7 +84,7 @@ def train():
                                                      data_files = validation_files,
                                                      image_size = FLAGS.image_size,
                                                      batch_size = validation_size,
-                                                     num_epochs = None,
+                                                     num_epochs = FLAGS.num_epochs,
                                                      train = False)
 
     data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
@@ -165,7 +165,7 @@ def train():
 
                 if val_global_accuracy > curr_val_acc:
                     checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet_top_validation.ckpt')
-                    saver.save(sess, checkpoint_path, global_step = global_step)
+                    saver.save(sess, checkpoint_path, global_step = step)
                     curr_val_acc = val_global_accuracy
                     improved_str = '*'
                 else:
@@ -183,7 +183,7 @@ def train():
             if step % 5000 == 0:
                 print('[PROGRESS]\tSaving checkpoint')
                 checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'fusenet.ckpt')
-                saver.save(sess, checkpoint_path, global_step = global_step)
+                saver.save(sess, checkpoint_path, global_step = step)
 
     except tf.errors.OutOfRangeError:
         print('[INFO    ]\tDone training for %d epochs, %d steps.' % (FLAGS.num_epochs, step))
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay_rate', help = 'Weight decay rate', type = float, default = 0.0005)
     parser.add_argument('--batch_size', help = 'Batch size', type = int, default = 8)
     parser.add_argument('--vgg_path', help = 'VGG weights path (.npy) ignore if set to None', default = '../Datasets/vgg16.npy')
-    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 2500)
+    parser.add_argument('--num_epochs', help = 'Number of epochs', type = int, default = 800)
     parser.add_argument('--class_weights', help = 'Weight per class for weighted loss. .npy file that contains single array [num_annots]')
     
     FLAGS, unparsed = parser.parse_known_args()
