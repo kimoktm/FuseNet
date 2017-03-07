@@ -47,7 +47,7 @@ Note: There is a problem with `00222_depth.png` that it is flipped horizontally.
 
 #### SUNRGBD
 
-1. Download tfrecords: [training](https://dl.dropboxusercontent.com/u/2075592/training-00000-of-00001.tfrecords), [validation](https://dl.dropboxusercontent.com/u/2075592/validation-00000-of-00001.tfrecords).
+1. Download tfrecords: [training](https://dl.dropboxusercontent.com/u/2075592/training-00000-of-00001.tfrecords), [validation](https://dl.dropboxusercontent.com/u/2075592/validation-00000-of-00001.tfrecords), [testing](https://dl.dropboxusercontent.com/u/2075592/testing-00000-of-00001.tfrecords).
 
 2. Download class weight file [here](https://dl.dropboxusercontent.com/u/2075592/sunrgbd_class_weights.npy).
 
