@@ -84,7 +84,7 @@ def train():
                                                      data_files = validation_files,
                                                      image_size = FLAGS.image_size,
                                                      batch_size = validation_size,
-                                                     num_epochs = 1,
+                                                     num_epochs = None,
                                                      train = False)
 
     data_image   = tf.placeholder(tf.float32, shape = (None, FLAGS.image_size, FLAGS.image_size, 3))
