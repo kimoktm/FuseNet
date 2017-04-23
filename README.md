@@ -37,7 +37,7 @@ maxpool with args which only works on GPU.
 
 3. Convert each extracted dataset (train, validation & test) to tfrecords `Datasets/NYU/tfrecords` using
 
-   ```
+  ```
   python data/dataset_to_tfrecords.py --data_dir NYU/train --output_dir NYU/tfrecords --classes_file class_names.txt
   ```
 
